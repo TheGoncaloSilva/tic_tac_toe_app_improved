@@ -1,0 +1,250 @@
+#:kivy 1.0.9
+
+WindowManager:
+    MainWindow:
+    OptionsWindow:
+    GameWindow:
+
+<MainWindow>:
+    name: "main"
+
+    FloatLayout:
+        canvas:
+            Color:
+                rgba: 192,192,192, 0.5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        FloatLayout:
+            size: root.width, root.height/2
+
+            Label:
+                text: "Tic Tac Toe"
+                size_hint: 0.8, 0.2
+                pos_hint: {"x":0.1, "top":0.9}
+                font_size: (root.width**2 + root.height**2) / 14**4
+            Label:
+                text: "Choose your Game"
+                size_hint: 0.8, 0.2
+                pos_hint: {"x":0.1, "top":0.75}
+                font_size: (root.width**2 + root.height**2) / 14**4
+            
+        BoxLayout:
+            size_hint: None, None
+            size: 300, 75
+            center: root.center
+
+            Button:
+                id: mplayer
+                text: '1 v 1'
+                background_color: 0,0,128, 0.8
+                on_release:
+                    app.load_multiplayer(mplayer)
+                    app.root.current = "game" # go to other window
+                    root.manager.transition.direction = "up" # change the page transition effect
+            Button:
+                id: splayer
+                text: '1 v AI'
+                background_color: 0,128,128, 0.5
+                on_release: 
+                    app.root.current = "options" # go to other window
+                    root.manager.transition.direction = "left" # change the page transition effect
+
+<OptionsWindow>:
+    name: "options"
+
+    FloatLayout:
+        canvas:
+            Color:
+                rgba: 192,192,192, 0.5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        FloatLayout:
+            size: root.width, root.height/2
+
+            Button:
+                text: "Easy"
+                id: easy_mode
+                size_hint: 0.8, 0.2
+                pos_hint: {"x":0.1, "top":0.9}
+                background_color: 255,215,0, 0.5
+                on_release: 
+                    app.load_solo_mode('easy')
+                    app.root.current = "game" # go to other window
+                    root.manager.transition.direction = "up" # change the page transition effect
+            Button:
+                id: difficult_mode
+                text: "Difficult"
+                size_hint: 0.8, 0.2
+                pos_hint: {"x":0.1, "top":0.6}
+                background_color: 255,0,0, 0.5
+                on_release: 
+                    app.load_solo_mode('difficult')
+                    app.root.current = "game" # go to other window
+                    root.manager.transition.direction = "up" # change the page transition effect
+
+            Button:
+                id: back_mode
+                text: "Back"
+                size_hint: 0.8, 0.2
+                pos_hint: {"x":0.1, "top":0.3}
+                background_color: 0,128,0, 0.5
+                on_release: 
+                    app.root.current = "main" # go to other window
+                    root.manager.transition.direction = "right" # change the page transition effect
+<GameWindow>:
+    name: "game"
+    mde : mde
+    lbl_current: lbl_current
+    lbl_gamer: lbl_gamer
+    btn_gamer: btn_gamer
+
+
+    FloatLayout:
+        size_hint: None, None
+        size: root.width, root.height
+        pos_hint: {'x': 0, 'y': 0}
+
+        #Paint the background
+        canvas:
+            Color:
+                rgba: 192,192,192, 0.5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+                
+        FloatLayout:
+
+            Button:
+                background_normal: "./img/back.png"
+                size_hint: None, None
+                size: 40, 40
+                pos_hint: {"x":0.01, "top":0.98}
+                on_release: 
+                    app.root.current = "main" # go to other window
+                    root.manager.transition.direction = "down" # change the page transition effect
+
+            Button:
+                background_normal: "./img/restore.png"
+                size_hint: None, None
+                size: 40, 40
+                pos_hint: {"x":0.1, "top":0.98}
+                on_release: 
+                    app.restart(lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+            
+            Label:
+                id: lbl_current
+                text: "Playing: "
+                size_hint: None, None
+                size: 40, 40
+                bold: True
+                font_size: '15sp'
+                pos_hint: {"x":0.3, "top":0.98}
+
+            Label:
+                id: lbl_gamer
+                text: "Player 1 "
+                size_hint: None, None
+                size: 40, 40
+                font_size: '20sp'
+                pos_hint: {"x":0.39, "top":0.98}
+            
+            Button:
+                id: btn_gamer
+                size_hint: None, None
+                size: 40, 40
+                pos_hint: {"x":0.47, "top":0.98}
+                #font_size: '40sp'       
+                text: 'X'
+                disabled: True
+
+            Label:
+                id: mde
+                text: ""
+                size_hint: None, None
+                size: 40, 40
+                font_size: '15sp'
+                pos_hint: {"x":0.80, "top":0.98}
+
+            
+        GridLayout:
+            id: box_out
+            cols: 1
+            size_hint: None, None
+            size: root.width - 20, root.height - 130 # 65 each part at the top
+            pos: 10, 65
+
+            GridLayout:
+                id: box_in
+                cols: 3
+                rows: 3
+                size_hint: None, None
+                size: root.width - 20, root.height - 130 # 65 each part at the top
+                pos: 10, 65
+                #pos: 100, 100
+
+                Button:
+                    id: gbtn_1
+                    font_size: '40sp'       
+                    text: ''
+                    on_release: app.choose_pos(self, 0, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_2
+                    font_size: '40sp'
+                    text: ''
+                    on_release: app.choose_pos(self, 1, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_3
+                    font_size: '40sp'
+                    text: ''
+                    on_release: app.choose_pos(self, 2, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_4
+                    font_size: '40sp' 
+                    text: ''
+                    on_release: app.choose_pos(self, 3, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_5
+                    font_size: '40sp'
+                    text: ''
+                    on_release: app.choose_pos(self, 4, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_6
+                    font_size: '40sp'
+                    text: ''
+                    on_release: app.choose_pos(self, 5, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_7
+                    font_size: '40sp'
+                    text: ''
+                    on_release: app.choose_pos(self, 6, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_8
+                    font_size: '40sp'
+                    text: ''
+                    on_release: app.choose_pos(self, 7, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+                Button:
+                    id: gbtn_9
+                    font_size: '40sp'
+                    text: ''
+                    on_release: app.choose_pos(self, 8, lbl_gamer, btn_gamer, gbtn_1, gbtn_2, gbtn_3, gbtn_4, gbtn_5, gbtn_6, gbtn_7, gbtn_8, gbtn_9)
+
+                # Alternative
+                #Image:
+                #    id: obj_1
+                #    source: './img/boll.png'
+                #Image:
+                #    id: obj_2
+                #    source: './img/tic.png'
+        
+
+
+
+
+        
+
+
+            

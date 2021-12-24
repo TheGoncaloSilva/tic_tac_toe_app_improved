@@ -1,0 +1,17 @@
+#:kivy 1.0.9
+
+<Button>:
+    font_size:40
+    color: 0.3, 0.6, 0.7, 1 # RGB color
+    size_hint: 0.3, 0.5 # width, height
+
+<FloatLayout>: # Everyhting created here will apply to every FloatLayout in the program
+    Button:
+        #pos_hint: ("x", "y", "top", "bottom", "left", "right")
+        pos_hint: {"x": 0.5, "top": 1}
+        text: "Press"
+
+    Button:
+        id: btn2
+        text: "Me" if btn2.state == "normal" else "Pressed"
+        background_color: 0.3, 0.4, 0.5, 1

@@ -1,0 +1,36 @@
+#:kivy 1.0.9
+
+WindowManager:
+    MainWindow:
+    SecondWindow:
+
+<MainWindow>:
+    name: "main"
+
+    GridLayout:
+        cols: 1
+
+        GridLayout:
+            cols: 2
+
+            Label:
+                text: "Password: "
+
+            TextInput:
+                id: passwd
+                multiline : False
+
+        Button:
+            text: "Submit"
+            on_release: 
+                app.root.current  = "second" if passwd.text == "gg" else "main"  # go to other window with condition
+                root.manager.transition.direction = "left" # change the page transition effect
+
+<SecondWindow>:
+    name: "second"
+
+    Button:
+        text: "Go Back"
+        on_release: 
+            app.root.current = "main" # go to other window
+            root.manager.transition.direction = "right" # change the page transition effect

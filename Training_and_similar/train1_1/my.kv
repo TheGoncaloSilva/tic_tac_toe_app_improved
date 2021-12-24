@@ -1,0 +1,33 @@
+#:kivy 1.0.9
+# Code Structure works with indentation
+
+# code of MygridClass
+<MyGrid>
+
+    name: name
+    email: email
+
+    GridLayout:
+        cols: 1
+        size: root.width - 200, root.height - 200 # Adjust for the entire window
+        pos: 100, 100
+        GridLayout:
+            cols: 2
+
+            Label:
+                text: "Name: "
+            
+            TextInput:
+                id: name # id of the field, to get the value on the python file
+                multiline: False
+
+            Label:
+                text: "Email: "
+
+            TextInput:
+                id: email
+                multiline: False
+
+        Button:
+            text: "Submit: "
+            on_press: root.btn() # Reference the method in the class, use root.
