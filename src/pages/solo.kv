@@ -1,0 +1,51 @@
+#:kivy 2.0.0
+
+<Soloplayer>:
+	
+	FloatLayout:
+		size_hint: None, None
+        size: root.width, root.height
+        pos_hint: {'x': 0, 'y': 0}
+
+		canvas:
+            #Rectangle:
+            #    pos: self.pos
+            #    size: self.size
+            #    Image:
+            #        source: './../../img/back_img.png'
+            Color:
+                rgba: 192,192,192, 0.5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+		Button:
+			pos_hint: {"x":.01, "top":.98}
+			size_hint: [None, None]
+			height: 40
+			width: 40
+			#background_normal: "./back.png"
+			Image:
+        		source: './back.png'
+        		center_x: self.parent.center_x
+        		center_y: self.parent.center_y
+			
+			#on_release:
+				#app.change_screen('home', 'down', 'solo')
+		Button:
+			pos_hint: {"x":.07, "top":.98}
+			size_hint: [None, None]
+			height: 40
+			width: 40
+			bold: True
+			background_normal: '../../img/restore.png'
+			on_release:
+				app.reset_net('solo')
+				app.execute_show_options("solo")
+		BoxLayout:
+			id: box
+			orientation: "vertical"
+			spacing:5
+			size_hint: [None, None]
+			width: 300
+			height:300
+			pos_hint: {'center_x':0.5, 'center_y':0.6}

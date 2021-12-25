@@ -1,0 +1,21 @@
+#:kivy 2.0.0
+#:include 'src/pages/home.kv'
+#:include 'src/pages/solo.kv'
+#:include 'src/pages/poly.kv'
+#:include 'src/pages/lan.kv'
+
+FloatLayout:
+        ScreenManager:
+                id: screen_manager
+                Home:
+                        name: 'home'
+                        id: home
+                Soloplayer:
+                        name: 'solo'
+                        id: solo
+                Multiplayer:
+                        name: 'poly'
+                        id: poly
+                Lan:
+                        name: 'lan'
+                        id: lan

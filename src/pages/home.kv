@@ -1,0 +1,95 @@
+#:kivy 2.0.0
+
+<Home>:
+	FloatLayout:
+		canvas:
+            #Rectangle:
+            #    pos: self.pos
+            #    size: self.size
+            #    Image:
+            #        source: './../../img/back_img.png'
+            Color:
+                rgba: 192,192,192, 0.5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+		Label:
+			pos_hint: {"center_x":.5, "top":.95}
+			#text: "Welcome To [size=45sp][color=#FF0000FF]X-O[/color][/size]"
+            text: "Tic-Tac-Toe"
+			markup: True
+			size_hint: [.70, .1]
+			font_size: '40sp'
+			bold: True
+			color: [1,1,1,1]
+			canvas.before:
+				Color:
+					rgba: [0,0,0,1]
+				Rectangle:
+					size: self.width+35, self.height-5
+					pos: self.x-17.5, self.y+2.5
+
+        Label:
+            text: "Choose your Game Mode"
+            bold: True
+            size_hint: [0.8, 0.2]
+            pos_hint: {"x":0.1, "top":0.82}
+            #font_size: (root.width**2 + root.height**2) / 14**4
+            font_size: "27sp"
+
+        Label:
+			pos_hint: {"center_x":.20, "top":.2}
+			#text: "Welcome To [size=45sp][color=#FF0000FF]X-O[/color][/size]"
+            text: "Credits: [ref=some][size=18sp][color=#99FF33]@TheGoncaloSilva[/color][/size][/ref]"
+			markup: True
+			size_hint: [None , None]
+			font_size: '15sp'
+			bold: True
+			color: [1,1,1,1]
+            on_ref_press:
+                import webbrowser
+                #webbrowser.open('https://github.com/TheGoncaloSilva') ############## REMOVE THIS COMMENT #################
+
+		Button:
+			id: solo_player
+			background_color: 255,215,0, 0.5
+			color: [0,0,0,1]
+			text: "Solo-Player"
+			size_hint: [.50, .1]
+			bold: True
+			italic: True
+			font_size: "25sp"
+			pos_hint: {"top": .65, 'center_x': .5}
+			on_release:
+				app.change_screen('solo', 'up')
+				app.execute_show_options("solo")
+
+		Button:
+			id: multi_player
+			background_color: 255,0,0, 0.5
+			color: [0,0,0,1]
+			text: "Multi-Player"
+			size_hint: [.50, .1]
+			bold: True
+			italic: True
+			font_size: "25sp"
+			height: 50
+			pos_hint: {"top": .52, 'center_x': .5}
+			on_release:
+				app.change_screen('poly', 'up')
+				app.execute_show_options("poly")
+
+        Button:
+			id: lan
+			background_color: 0,128,0, 0.5
+			color: [0,0,0,1]
+			text: "Lan"
+			size_hint: [.50, .1]
+			bold: True
+			italic: True
+			font_size: "25sp"
+			height: 50
+			pos_hint: {"top": .37, 'center_x': .5}
+			on_release:
+				app.change_screen('lan', 'right')
