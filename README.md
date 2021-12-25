@@ -18,7 +18,6 @@ Improved Tic-tac-toe game (jogo do galo) using python and kivy with graphical in
         2.2.2.3 Linux
           $ source kivy_venv/bin/activate
       2.2.3 Install kivi
-        $ python3 -m pip install kivy[base] kivy_examples
         $ python3 -m pip install kivy[full] kivy_examples -> for full dependencies
         $ pip install kivy[sdl2]
       Check the installation
