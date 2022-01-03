@@ -2,17 +2,16 @@
 
 <Home>:
 	FloatLayout:
-		canvas:
+		canvas.before:
+            Rectangle:
+				source: 'src/img/back_img.png'
+                pos: self.pos
+                size: self.size
+            #Color:
+            #    rgba: 192,192,192, 0.5
             #Rectangle:
             #    pos: self.pos
             #    size: self.size
-            #    Image:
-            #        source: './../../img/back_img.png'
-            Color:
-                rgba: 192,192,192, 0.5
-            Rectangle:
-                pos: self.pos
-                size: self.size
 
 		Label:
 			pos_hint: {"center_x":.5, "top":.95}
@@ -37,6 +36,12 @@
             pos_hint: {"x":0.1, "top":0.82}
             #font_size: (root.width**2 + root.height**2) / 14**4
             font_size: "27sp"
+			#canvas.before:
+			#	Color:
+			#		rgb: utils.rgba('250448')
+			#	Rectangle:
+			#		size: self.width-400, self.height-30
+			#		pos: self.x+200, self.y+5
 
         Label:
 			pos_hint: {"center_x":.20, "top":.2}
@@ -50,10 +55,18 @@
             on_ref_press:
                 import webbrowser
                 #webbrowser.open('https://github.com/TheGoncaloSilva') ############## REMOVE THIS COMMENT #################
+			
+			canvas.before:
+				Color:
+					rgb: utils.rgba('250448')
+				Rectangle:
+					size: self.width+150, self.height-55
+					pos: self.x-75, self.y+26
 
 		Button:
 			id: solo_player
-			background_color: 255,215,0, 0.5
+			background_color: 255, 215, 0, 1
+			#background_color: 255,215,0, 0.5
 			color: [0,0,0,1]
 			text: "Solo-Player"
 			size_hint: [.50, .1]
@@ -67,7 +80,7 @@
 
 		Button:
 			id: multi_player
-			background_color: 255,0,0, 0.5
+			background_color: 255, 0, 0, 1
 			color: [0,0,0,1]
 			text: "Multi-Player"
 			size_hint: [.50, .1]
@@ -82,7 +95,7 @@
 
         Button:
 			id: lan
-			background_color: 0,128,0, 0.5
+			background_color: 0, 128, 0, 1
 			color: [0,0,0,1]
 			text: "Lan"
 			size_hint: [.50, .1]
