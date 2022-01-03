@@ -11,6 +11,7 @@ from kivy.uix.label import Label # Import the simbols and widgets
 from kivy.uix.popup import Popup # Import Popups
 from kivy.uix.boxlayout import BoxLayout # Box layout for Popup
 from src.pages.common import Options_modals, analyze_moves
+from src.pages.player import Player
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 from kivy.lang.parser import global_idmap
@@ -34,8 +35,8 @@ class MyApp(App):
     all_btns_ids = [] # holds every button as an asset
     btns_ids = []
     turn = True
-    #player1 = Player()
-    #player2 = Player()
+    player1 = Player()
+    player2 = Player()
     winner = ''
     found_winner = False
 
@@ -47,7 +48,6 @@ class MyApp(App):
         Window.size = (size_x, size_y)
         Window.minimum_width, Window.minimum_height = (size_x, size_y)
         return Builder.load_file('main.kv')
-    
     def on_start(self):
         """
         Function executed on app load
@@ -62,12 +62,18 @@ class MyApp(App):
         manager.transition.direction = way
         manager.current = sc
 
-    def show_options(self, mode):
-        pop = Options_modals(mode, app)
+    """
+        Function that runs the solo mode
+    """
+    def solo_engine():
+        pass
+
+    def show_options(self, mode, opt):
+        pop = Options_modals(mode, app, opt)
         pop.open()
 
-    def execute_show_options(self, mode):
-        Clock.schedule_once(lambda x: self.show_options(mode), 0.5)
+    def execute_show_options(self, mode, opt):
+        Clock.schedule_once(lambda x: self.show_options(mode, opt), 0.5)
 
     def draw_net(self, mode):
         self.mode = mode
