@@ -96,7 +96,7 @@ class Options_modals(Popup):
 
     def start_game(self):
         if self.app.user_choice != "":
-            self.app.draw_net(self.mode)
+            self.app.reset_screen(self.mode)
             self.dismiss()
 
     def save_name(self):
@@ -127,7 +127,7 @@ def analyze_winner(board):
             for pos in case:
                 if board[pos] == player:
                     match += 1
-            
+
             if match == 3:
                 return [True, player]
 

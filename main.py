@@ -11,6 +11,7 @@ from kivy.uix.label import Label # Import the simbols and widgets
 from kivy.uix.popup import Popup # Import Popups
 from kivy.uix.boxlayout import BoxLayout # Box layout for Popup
 from src.pages.common import Options_modals, analyze_moves
+from src.pages.solo import ai_mode,minimax
 from src.pages.player import Player
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
@@ -39,6 +40,7 @@ class MyApp(App):
     player2 = Player()
     winner = ''
     found_winner = False
+    difficulty = 0
 
     def build(self): # Construir o UI
         self.title = 'Tic Tac Toe' # Change the the name of the application window
@@ -48,13 +50,14 @@ class MyApp(App):
         Window.size = (size_x, size_y)
         Window.minimum_width, Window.minimum_height = (size_x, size_y)
         return Builder.load_file('main.kv')
+        
     def on_start(self):
         """
         Function executed on app load
         """
         pass
 
-    def change_screen(self, sc, way, mode=''):
+    def change_screen(self, sc, way):
         #if sc == 'home':
             #self.reset_net(mode)
         manager = self.root.ids.screen_manager
@@ -75,6 +78,10 @@ class MyApp(App):
     def execute_show_options(self, mode, opt):
         Clock.schedule_once(lambda x: self.show_options(mode, opt), 0.5)
 
+    # reset the page values
+    def reset_screen(self, mode):
+        self.draw_net(mode)
+
     def draw_net(self, mode):
         self.mode = mode
         net = self.root.ids[mode].ids
@@ -85,7 +92,7 @@ class MyApp(App):
                              background_down='', background_color=utils.get_color_from_hex("#fdcb01"))
                 if not(btn in self.all_btns_ids):
                     self.all_btns_ids.append(btn)
-                btn.bind(on_release=self.make_play)
+                btn.bind(on_release=self.player_play)
                 box.add_widget(btn)
             net.box.add_widget(box)
 
@@ -104,9 +111,22 @@ class MyApp(App):
             asset.background_normal = unchecked
             self.get_id(asset.text)
         else: pass
-        """
-        if (self.turn == False and self.mode == 'solo') and self.found_winner != True:
-            self.computer_player()"""
+
+        if (not self.turn and self.mode == 'solo') and self.found_winner != True:
+            self.computer_player()
+
+    def player_play(self, asset):
+        if asset.background_normal == '':
+            self.make_play(self, asset)
+            if (not self.turn and self.mode == 'solo') and self.found_winner != True:
+                self.computer_player()
+
+    def computer_player(self):
+        if self.mode != 'solo': return
+        avatars = [self.player1.player_avatar, self.player2.player_avatar]
+        spot = ai_mode(self.table_array(), avatars) ### change this
+        btn = self.get_id(spot[0]+'-'+spot[1])
+        self.make_play(btn)
 
     def get_id(self, member, get_num=False):
         ids = {'0-0': 0, '0-1': 1, '0-2': 2, '1-0': 3,
@@ -139,6 +159,10 @@ class MyApp(App):
 
     # Closes the game 
     def game_ended(self, data):
+        self.found_winner = True
+        if data[0] == 'winner':
+            self.winner = data[1]
+        print(data)
         #score = Score(winner, app, mode)
         #Clock.schedule_once(lambda x: score.open(), 1)
         pass
