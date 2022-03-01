@@ -1,4 +1,5 @@
 # 
+from typing import Text
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
@@ -58,7 +59,7 @@ class Options_modals(Popup):
             self.box = BoxLayout(size_hint_y=.7, padding=10, spacing=10, pos_hint={
                                 'top': .99, 'center_x': .5}, orientation='horizontal')
             #self.inf_label = Label(text="x: ", font_size="70sp", bold=True)
-            self.input = input()
+            self.input = input() #### dont forget to sanitize inputs
             self.save_btn = Button(text="SAVE", background_normal='', background_color=[255, 215, 0, 1], color=[
                                 0, 0, 0, 1], font_size="18sp", bold=True, pos_hint={'center_x': .5, "y": .03}, size_hint=[.9, .15])
             # callbacks
@@ -78,7 +79,50 @@ class Options_modals(Popup):
             pass
 
         elif opt == 'winner':
-            pass
+            # title
+            self.title = "game ended!".upper()
+            self.title_size = '16sp'
+            self.title_color = [1, 1, 1, 1]
+            # separator
+            self.separator_color = [1, 1, 1, 1]
+            self.separator_height: 10
+            # content
+            self.box = BoxLayout(size_hint_y = .3,
+                    padding = 10, 
+                    spacing = 10, 
+                    pos_hint = {'top': .99, 'center_x': .5}, 
+                    orientation = 'horizontal', 
+                    height = 40)
+                    
+            if self.app.found_winner and self.app.winner != '': # winner exists
+                if self.app.mode == 'solo' and self.app.winner == self.app.player1.player_avatar:
+                    self.title = "Congratulatins".upper()
+                    self.info = Label(text = f"player1(name) won the game", 
+                                color = [1, 1, 1, 1], 
+                                bold = True,
+                                markup = True)
+                elif self.app.mode == 'solo' and self.app.winner == self.app.player2.player_avatar:
+                    self.info = Label(text = f"The AI has won the game", 
+                                color = [1, 1, 1, 1], 
+                                bold = True,
+                                markup = True)
+
+            elif self.app.found_winner: # tie
+                self.info = Label(text = "The game ended with a TIE.", 
+                                color = [1, 1, 1, 1], 
+                                bold = True,
+                                markup = True)
+
+            self.save_btn = Button(text="Restart", background_normal='', background_color=[255, 215, 0, 1], color=[
+                            0, 0, 0, 1], font_size="18sp", bold=True, pos_hint={'center_x': .5, "y": .03}, size_hint=[.9, .15])
+            # callbacks
+            self.save_btn.bind(on_release=lambda x: self.start_game())
+            # positioning widgets on the popup
+            self.box.add_widget(self.info)
+            self.float = FloatLayout()
+            self.float.add_widget(self.box)
+            self.float.add_widget(self.save_btn)
+            self.add_widget(self.float)
 
         else: # error found
             pass
@@ -88,14 +132,18 @@ class Options_modals(Popup):
             self.x_btn.background_color = utils.get_color_from_hex("#847878")
             self.o_btn.background_color = utils.get_color_from_hex("#f60261")
             self.o_btn.color=[1, 1, 1, 1]
+            self.app.player1.player_avatar = 'x'
+            self.app.player2.player_avatar = 'o'
         elif symbol == "o":
             self.o_btn.background_color = utils.get_color_from_hex("#847878")
             self.x_btn.background_color = utils.get_color_from_hex("#00ebea")
             self.x_btn.color = [0, 0, 0, 1]
-        self.app.user_choice = symbol
+            self.app.player1.player_avatar = 'o'
+            self.app.player2.player_avatar = 'x'
+        self.app.active_player = symbol
 
     def start_game(self):
-        if self.app.user_choice != "":
+        if self.app.active_player != "":
             self.app.reset_screen(self.mode)
             self.dismiss()
 

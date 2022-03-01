@@ -1,5 +1,4 @@
-import kivy
-import os, sys
+import math, kivy, os, sys, random, time
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.clock import Clock
@@ -11,8 +10,9 @@ from kivy.uix.label import Label # Import the simbols and widgets
 from kivy.uix.popup import Popup # Import Popups
 from kivy.uix.boxlayout import BoxLayout # Box layout for Popup
 from src.pages.common import Options_modals, analyze_moves
-from src.pages.solo import ai_mode,minimax
+from src.pages.solo import ai_mode,minimax,set_scores, easy_mode
 from src.pages.player import Player
+from kivy.modules import inspector
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 from kivy.lang.parser import global_idmap
@@ -32,15 +32,15 @@ class Lan(Screen):
 
 class MyApp(App):
     mode = ""
-    user_choice = ""
+    active_player = ""
     all_btns_ids = [] # holds every button as an asset
     btns_ids = []
-    turn = True
+    turn = True # True = player1 and False = player2 playing
     player1 = Player()
     player2 = Player()
     winner = ''
     found_winner = False
-    difficulty = 0
+    difficulty = 2
 
     def build(self): # Construir o UI
         self.title = 'Tic Tac Toe' # Change the the name of the application window
@@ -49,6 +49,7 @@ class MyApp(App):
         size_y = 700
         Window.size = (size_x, size_y)
         Window.minimum_width, Window.minimum_height = (size_x, size_y)
+        inspector.create_inspector(Window, self) # Debug
         return Builder.load_file('main.kv')
         
     def on_start(self):
@@ -80,7 +81,18 @@ class MyApp(App):
 
     # reset the page values
     def reset_screen(self, mode):
+        self.remove_net()
+        # check if there are already objects before creating
         self.draw_net(mode)
+        self.found_winner = False
+        self.winner = ''
+        self.turn = bool(random.getrandbits(1))    
+        if self.turn:
+            self.active_player = self.player1.player_avatar
+        elif not self.turn:
+            self.active_player = self.player2.player_avatar
+        if not self.turn:
+            self.computer_player()
 
     def draw_net(self, mode):
         self.mode = mode
@@ -95,15 +107,24 @@ class MyApp(App):
                 btn.bind(on_release=self.player_play)
                 box.add_widget(btn)
             net.box.add_widget(box)
+    
+    def remove_net(self):
+        if len(self.all_btns_ids) != 0:
+            #net = self.root.ids['solo'].ids #, self.root.ids['poly'].ids, self.root.ids['lan'].ids]
+            #net.box.clear_widgets() # deletes all widgets in the table
+            nets = [self.root.ids['solo'].ids, self.root.ids['poly'].ids, self.root.ids['lan'].ids]
+            for screen in nets:
+                if screen != {}: screen.box.clear_widgets() # deletes all widgets in the table
+            self.all_btns_ids.clear()
 
     def make_play(self, asset):
         self.btns_ids.append(asset)
-        if self.user_choice == 'x':
+        if self.active_player == 'x':
             unchecked = 'src/img/x_button.png'
-            self.user_choice = 'o'
-        elif self.user_choice == 'o':
+            self.active_player = 'o'
+        elif self.active_player == 'o':
             unchecked = 'src/img/o_button.png'
-            self.user_choice = 'x'
+            self.active_player = 'x'
         self.turn = not self.turn
         
         if asset.background_normal == '':
@@ -112,30 +133,36 @@ class MyApp(App):
             self.get_id(asset.text)
         else: pass
 
-        if (not self.turn and self.mode == 'solo') and self.found_winner != True:
-            self.computer_player()
-
     def player_play(self, asset):
-        if asset.background_normal == '':
-            self.make_play(self, asset)
-            if (not self.turn and self.mode == 'solo') and self.found_winner != True:
-                self.computer_player()
+        if asset.background_normal == '' and not self.found_winner:
+            self.make_play(asset)
+            if (not self.turn and self.mode == 'solo') and  not self.found_winner:
+                Clock.schedule_once(lambda x: self.computer_player(), 0.5) # make AI play and add delay
 
     def computer_player(self):
         if self.mode != 'solo': return
         avatars = [self.player1.player_avatar, self.player2.player_avatar]
-        spot = ai_mode(self.table_array(), avatars) ### change this
-        btn = self.get_id(spot[0]+'-'+spot[1])
+        set_scores(avatars)
+        rng = random.randint(0,self.difficulty)
+        spot = []
+        if rng == 0:
+            spot = ai_mode(self.matrix_array(), avatars)
+        else: spot = easy_mode(self.matrix_array())
+
+        if spot == None:
+            pass # SHOW A ERROR ON THE SCREEN
+
+        btn = self.get_id(f"{spot[0]}-{spot[1]}", True)
         self.make_play(btn)
 
     def get_id(self, member, get_num=False):
         ids = {'0-0': 0, '0-1': 1, '0-2': 2, '1-0': 3,
                '1-1': 4, '1-2': 5, '2-0': 6, '2-1': 7, '2-2': 8}
-        if get_num == True:
-            keys = list(ids.keys()) # prints 0-0, 0-1...
-            values = list(ids.values()) # prints the integers 1, 2 ...
-            index = values.index(member) # prints the index of a keys
-            return keys[index]
+        if get_num:
+            #keys = list(ids.keys()) # prints 0-0, 0-1...
+            #values = list(ids.values()) # prints the integers 1, 2 ...
+            #index = values.index(member) # prints the index of a keys
+            return self.all_btns_ids[ids[member]]
         else:
             res = analyze_moves(self.table_array())
             if res != None:
@@ -154,15 +181,33 @@ class MyApp(App):
             else:
                 table.append(' ')
         
-        print(table) # Debugging
+        # print(table) # DEBUG
         return table
+    
+    def matrix_array(self):
+        table = self.table_array()
+        matrix = []
+        line_col_size = int(math.sqrt(len(table)))
+        pos = -3
+        for line in range(line_col_size):
+            pos = pos + 3
+            line = []
+            for col in range(line_col_size):
+                if table[pos+col] == ' ':
+                    line.append(0)
+                else: 
+                    line.append(table[pos+col])
+            matrix.append(line)
+        
+        # print(matrix) DEBUG
+        return matrix
 
     # Closes the game 
     def game_ended(self, data):
         self.found_winner = True
         if data[0] == 'winner':
             self.winner = data[1]
-        print(data)
+        self.execute_show_options(self.mode, 'winner')
         #score = Score(winner, app, mode)
         #Clock.schedule_once(lambda x: score.open(), 1)
         pass
