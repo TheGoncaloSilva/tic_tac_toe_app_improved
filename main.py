@@ -9,14 +9,15 @@ from kivy.uix.button import Button # import buttons
 from kivy.uix.label import Label # Import the simbols and widgets
 from kivy.uix.popup import Popup # Import Popups
 from kivy.uix.boxlayout import BoxLayout # Box layout for Popup
-from src.pages.common import Options_modals, analyze_moves
-from src.pages.solo import ai_mode,minimax,set_scores, easy_mode
-from src.pages.player import Player
 from kivy.modules import inspector
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
 from kivy.lang.parser import global_idmap
 from kivy import utils
+from src.pages.common import Options_modals, analyze_moves
+from src.pages.solo import ai_mode,minimax,set_scores, easy_mode
+from src.pages.player import Player
+import src.pages.db_control as db
 
 class Home(Screen):
     pass
@@ -40,7 +41,7 @@ class MyApp(App):
     player2 = Player()
     winner = ''
     found_winner = False
-    difficulty = 2
+    difficulty = 0
 
     def build(self): # Construir o UI
         self.title = 'Tic Tac Toe' # Change the the name of the application window
@@ -60,11 +61,20 @@ class MyApp(App):
 
     def change_screen(self, sc, way):
         #if sc == 'home':
-            #self.reset_net(mode)
+        #    self.reset_net(mode)
         manager = self.root.ids.screen_manager
         manager.transition.duration = 0.5
         manager.transition.direction = way
         manager.current = sc
+
+    def update_info(self):
+        if self.mode == 'solo':
+            grid = self.root.ids['solo'].ids
+            grid.btn_gamer.text = self.active_player
+            if self.active_player == self.player1.player_avatar:
+                grid.lbl_current.text = f"[b]Playing:[/b] {self.player1.player_name}"
+            elif self.active_player == self.player2.player_avatar:
+                grid.lbl_current.text = f"[b]Playing:[/b] {self.player2.player_name}"
 
     """
         Function that runs the solo mode
@@ -72,25 +82,40 @@ class MyApp(App):
     def solo_engine():
         pass
 
-    def show_options(self, mode, opt):
-        pop = Options_modals(mode, app, opt)
+    def show_options(self, mode, opt, args):
+        pop = Options_modals(mode, app, opt, args)
         pop.open()
 
-    def execute_show_options(self, mode, opt):
-        Clock.schedule_once(lambda x: self.show_options(mode, opt), 0.5)
+    def execute_show_options(self, mode, opt, args):
+        Clock.schedule_once(lambda x: self.show_options(mode, opt, args), 0.5)
+
+    def player_names(self, mode):
+        if mode == 'solo':
+            self.execute_show_options(mode, 'name', 'player1')
+            self.player2.player_name = 'BOT'
+        elif mode == 'poly':
+            pass # change
 
     # reset the page values
     def reset_screen(self, mode):
+        if mode == 'solo': 
+            self.execute_show_options("solo", 'difficulty', '')
+            self.execute_show_options("solo", 'avatar', '')
+
         self.remove_net()
         # check if there are already objects before creating
         self.draw_net(mode)
         self.found_winner = False
         self.winner = ''
         self.turn = bool(random.getrandbits(1))    
+
+    def start_game(self):
         if self.turn:
             self.active_player = self.player1.player_avatar
+            self.update_info()
         elif not self.turn:
             self.active_player = self.player2.player_avatar
+            self.update_info()
         if not self.turn:
             self.computer_player()
 
@@ -132,6 +157,7 @@ class MyApp(App):
             asset.background_normal = unchecked
             self.get_id(asset.text)
         else: pass
+        self.update_info()
 
     def player_play(self, asset):
         if asset.background_normal == '' and not self.found_winner:
@@ -141,6 +167,7 @@ class MyApp(App):
 
     def computer_player(self):
         if self.mode != 'solo': return
+        self.update_info()
         avatars = [self.player1.player_avatar, self.player2.player_avatar]
         set_scores(avatars)
         rng = random.randint(0,self.difficulty)
@@ -207,9 +234,13 @@ class MyApp(App):
         self.found_winner = True
         if data[0] == 'winner':
             self.winner = data[1]
-        self.execute_show_options(self.mode, 'winner')
+        self.execute_show_options(self.mode, 'winner', '')
         #score = Score(winner, app, mode)
         #Clock.schedule_once(lambda x: score.open(), 1)
+        pass
+
+    def save_db(self, data):
+        conn = db.create_connection("./src/GameResults.db")
         pass
 
 if __name__ == "__main__":

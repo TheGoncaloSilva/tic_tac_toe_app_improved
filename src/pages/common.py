@@ -5,10 +5,11 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.textinput import TextInput
 from kivy import utils
 
 class Options_modals(Popup):
-    def __init__(self, mode, app, opt, **kwargs):
+    def __init__(self, mode, app, opt, extra, **kwargs):
         super(Options_modals, self).__init__(**kwargs)
         self.mode = mode
         self.app = app
@@ -59,14 +60,13 @@ class Options_modals(Popup):
             self.box = BoxLayout(size_hint_y=.7, padding=10, spacing=10, pos_hint={
                                 'top': .99, 'center_x': .5}, orientation='horizontal')
             #self.inf_label = Label(text="x: ", font_size="70sp", bold=True)
-            self.input = input() #### dont forget to sanitize inputs
+            self.t_input = TextInput(multiline = False, hint_text = f'Enter {extra} name') #### dont forget to sanitize inputs
             self.save_btn = Button(text="SAVE", background_normal='', background_color=[255, 215, 0, 1], color=[
                                 0, 0, 0, 1], font_size="18sp", bold=True, pos_hint={'center_x': .5, "y": .03}, size_hint=[.9, .15])
             # callbacks
-            self.save_btn.bind(on_release=lambda x: self.start_game())
+            self.save_btn.bind(on_release=lambda x: self.save_name(self.t_input, extra))
             # positioning widgets on the popup
-            #self.box.add_widget(self.inf_label)
-            self.box.add_widget(self.input)
+            self.box.add_widget(self.t_input)
             self.float = FloatLayout()
             self.float.add_widget(self.box)
             self.float.add_widget(self.save_btn)
@@ -76,7 +76,35 @@ class Options_modals(Popup):
             pass
 
         elif opt == 'difficulty':
-            pass
+            #self.height = 250
+            #self.width = 400
+            # title
+            self.title = "Difficulty level".upper()
+            self.title_size = '16sp'
+            self.title_color = [1, 1, 1, 1]
+            # separator
+            self.separator_color = [1, 1, 1, 1]
+            self.separator_height: 10
+            # content
+            self.box = BoxLayout(size_hint_y=.7, padding=5, spacing=5, pos_hint={
+                                'top': .99, 'center_x': .5}, orientation='vertical')
+            self.easy = Button(text="easy", background_normal='', background_down='', background_color= 
+                                utils.get_color_from_hex("#07fc03"), color=[0, 0, 0, 1], font_size="20sp")
+            self.medium = Button(text="medium", background_normal='', background_down='', background_color=
+                                utils.get_color_from_hex("#ffd900"), color=[0, 0, 0, 1], font_size="20sp")
+            self.hard = Button(text="hard", background_normal='', background_down='', background_color=
+                                    utils.get_color_from_hex("#ff1e00"), color=[0, 0, 0, 1], font_size="20sp")
+            # callbacks
+            self.easy.bind(on_release=lambda x: self.difficulty(2))
+            self.medium.bind(on_release=lambda x: self.difficulty(1))
+            self.hard.bind(on_release=lambda x: self.difficulty(0))
+            # positioning widgets on the popup
+            self.box.add_widget(self.easy)
+            self.box.add_widget(self.medium)
+            self.box.add_widget(self.hard)
+            self.float = FloatLayout()
+            self.float.add_widget(self.box)
+            self.add_widget(self.float)
 
         elif opt == 'winner':
             # title
@@ -97,12 +125,12 @@ class Options_modals(Popup):
             if self.app.found_winner and self.app.winner != '': # winner exists
                 if self.app.mode == 'solo' and self.app.winner == self.app.player1.player_avatar:
                     self.title = "Congratulatins".upper()
-                    self.info = Label(text = f"player1(name) won the game", 
+                    self.info = Label(text = f"{self.app.player1.player_name} won the game", 
                                 color = [1, 1, 1, 1], 
                                 bold = True,
                                 markup = True)
                 elif self.app.mode == 'solo' and self.app.winner == self.app.player2.player_avatar:
-                    self.info = Label(text = f"The AI has won the game", 
+                    self.info = Label(text = f"{self.app.player2.player_name} has won the game", 
                                 color = [1, 1, 1, 1], 
                                 bold = True,
                                 markup = True)
@@ -116,7 +144,7 @@ class Options_modals(Popup):
             self.save_btn = Button(text="Restart", background_normal='', background_color=[255, 215, 0, 1], color=[
                             0, 0, 0, 1], font_size="18sp", bold=True, pos_hint={'center_x': .5, "y": .03}, size_hint=[.9, .15])
             # callbacks
-            self.save_btn.bind(on_release=lambda x: self.start_game())
+            self.save_btn.bind(on_release=lambda x: self.reset_game())
             # positioning widgets on the popup
             self.box.add_widget(self.info)
             self.float = FloatLayout()
@@ -141,15 +169,29 @@ class Options_modals(Popup):
             self.app.player1.player_avatar = 'o'
             self.app.player2.player_avatar = 'x'
         self.app.active_player = symbol
+    
+    def difficulty(self, value):
+        self.app.difficulty = value
+        self.app.start_game()
+        self.dismiss()
+
+    def reset_game(self):
+        self.app.reset_screen(self.mode)
+        self.dismiss()
 
     def start_game(self):
         if self.app.active_player != "":
-            self.app.reset_screen(self.mode)
+            #self.app.reset_screen(self.mode)
             self.dismiss()
 
-    def save_name(self):
-        #self.app.player1.player_name = ""
-        pass
+    def save_name(self, asset, player):
+        max_size = 10
+        if player == "player1":
+            self.app.player1.player_name = asset.text[:max_size]
+        else: 
+            self.app.player2.player_name = asset.text[:max_size]
+        self.dismiss()
+        
 
 # Evaluate each move made
 def analyze_moves(board):

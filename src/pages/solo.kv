@@ -36,6 +36,32 @@
 			on_release:
 				app.reset_screen('solo')
 				
+		Label:
+			id: lbl_current
+			text: "[b]Playing:[/b] "
+			size_hint: None, None
+			markup: True
+			size: 40, 40
+			color: [0,0,0,1]
+			font_size: '15sp'
+			pos_hint: {"x":0.43, "top":0.98}
+			canvas.before:
+				Color: 
+					rgba: 192,192,192, 1
+				Rectangle:
+					pos: self.x-70, self.y
+					size: self.width+180, self.height
+		
+		Button:
+			id: btn_gamer
+			size_hint: None, None
+			size: 35, 35
+			pos_hint: {"x":0.54, "top":0.976}
+			color: [1,1,1,1]
+			#font_size: '40sp'       
+			text: 'X'
+			#disabled: True	
+
 		BoxLayout:
 			id: box
 			orientation: "vertical"

@@ -76,7 +76,9 @@
 			pos_hint: {"top": .65, 'center_x': .5}
 			on_release:
 				app.change_screen('solo', 'up')
-				app.execute_show_options("solo", 'avatar')
+				app.reset_screen('solo')
+				app.player_names("solo")
+				#app.execute_show_options("solo", 'avatar')
 
 		Button:
 			id: multi_player
