@@ -1,4 +1,5 @@
 #:kivy 2.0.0
+#:import utils kivy.utils
 
 <Soloplayer>:
 	
@@ -36,31 +37,39 @@
 			on_release:
 				app.reset_screen('solo')
 				
-		Label:
-			id: lbl_current
-			text: "[b]Playing:[/b] "
-			size_hint: None, None
-			markup: True
-			size: 40, 40
-			color: [0,0,0,1]
-			font_size: '15sp'
-			pos_hint: {"x":0.43, "top":0.98}
+		BoxLayout:
+			id: update
+			orientation: "horizontal"
+			pos_hint: {'center_x':0.5, 'center_y':0.96}
+			size_hint: [0.25, 0.05]
 			canvas.before:
 				Color: 
-					rgba: 192,192,192, 1
+					rgb: utils.get_color_from_hex('#fdcb01')
 				Rectangle:
-					pos: self.x-70, self.y
-					size: self.width+180, self.height
+					pos: self.x, self.y
+					size: self.width, self.height
+
+			Label:
+				id: lbl_current
+				text: "[b]Playing:[/b] "
+				size_hint_x: 0.7
+				markup: True
+				#size: 40, 40
+				color: [0,0,0,1]
+				font_size: '15sp'
+				#pos_hint: {"x":0.43, "top":0.98}
 		
-		Button:
-			id: btn_gamer
-			size_hint: None, None
-			size: 35, 35
-			pos_hint: {"x":0.54, "top":0.976}
-			color: [1,1,1,1]
-			#font_size: '40sp'       
-			text: 'X'
-			#disabled: True	
+			Button:
+				id: btn_gamer
+				size_hint_x: 0.2
+				#size: 35, 35
+				#pos_hint: {"x":0.54, "top":0.976}
+				color: [1,1,1,1]
+				#font_size: '40sp'      
+				font_size: '15sp' 
+				text: 'X'
+				#disabled: True
+
 
 		BoxLayout:
 			id: box

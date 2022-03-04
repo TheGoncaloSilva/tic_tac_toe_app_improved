@@ -1,5 +1,5 @@
 # @credit to : https://www.sqlitetutorial.net/sqlite-python/
-import sqlite3
+import sqlite3, os, time, datetime
 from sqlite3 import Error
 from unittest import result
 
@@ -53,7 +53,7 @@ def create_df_tables(conn):
     table_stats = """ CREATE TABLE IF NOT EXISTS stats (
                         id integer PRIMARY KEY AUTOINCREMENT,
                         result integer NOT NULL,
-                        TimeStamp text NOT NULL,
+                        timeStamp text NOT NULL,
                         gameMode integer NOT NULL,
                         player_id integer NOT NULL,
                         FOREIGN KEY (gameMode) REFERENCES gameMode (id),
@@ -68,15 +68,53 @@ def create_df_tables(conn):
     except Error as e:
         print(e)
 
-def insert_gameMode(conn, data):
+def insert_gameMode(conn, name):
     """
     Create a new Game Mode
     :param conn: Connection object
-    :param data: String containing the data to insert
+    :param name: String containing the name od the mode
     :return: True if success
     """
     try:
-        query = f" INSERT INTO gameMode(name) VALUES('{data}') "
+        query = f" INSERT INTO gameMode(name) VALUES('{name}') ;"
+        c = conn.cursor()
+        c.execute(query)
+        conn.commit()
+        return True
+    except Error as e:
+        return e
+
+def insert_player(conn, name):
+    """
+    Create a new player
+    :param conn: Connection object
+    :param name: String containing the name of the player
+    :return: True if success
+    """
+    try:
+        query = f" INSERT INTO player(name) VALUES('{name}') ;"
+        c = conn.cursor()
+        c.execute(query)
+        conn.commit()
+        return True
+    except Error as e:
+        return e
+
+def insert_stats(conn, data):
+    """
+    Create a new game record
+    :param conn: Connection object
+    :param data: Dict containing the data to insert
+    :return: True if success
+    """
+    formated_data = data[0]
+    for i in range(1,len(data)):
+        if type(data[i]) == str:
+            formated_data = f"{formated_data}, '{data[i]}'"
+        else:
+            formated_data = f"{formated_data}, '{data[i]}'"
+    try:
+        query = f" INSERT INTO stats(result, timeStamp, gameMode, player_id) VALUES({formated_data}) ;"
         c = conn.cursor()
         c.execute(query)
         conn.commit()
@@ -84,7 +122,7 @@ def insert_gameMode(conn, data):
     except Error as e:
         return e
     
-def getData_fromDB(conn, table, fields):
+def getData_fromDB(conn, table, fields, conditions):
     """
     Select fields from table
     :param conn: Connection object
@@ -94,20 +132,42 @@ def getData_fromDB(conn, table, fields):
     """
     selectors = fields[0]
     for i in range(1,len(fields)):
-        selectors = f'{selectors}, {i}'
+        selectors = f'{selectors}, {selectors[i]}'
     try:
-        query = f" Select {selectors} from {table} "
+        if conditions == '':
+            query = f" Select {selectors} from {table} ;"
+        else: 
+            query = f" Select {selectors} from {table} {conditions} ;"
         c = conn.cursor()
         c.execute(query)
         return c.fetchall()
     except Error as e:
         return e
 
+def operation_test(conn):
+    """
+    Tests operations (insertions and selections) with the database
+    :param conn: Connection object
+    :return:
+    """
+    value = getData_fromDB(conn, 'player', ['id'], "WHERE name = 'goncalo' ")
+    if value == []:
+        insert_player(conn, 'goncalo')
+        value = getData_fromDB(conn, 'player', ['id'], "WHERE name = 'goncalo' ")
+    player_id = value[0][0]
+    mode_id = getData_fromDB(conn, 'gameMode', ['id'], "WHERE name = 'solo' ")
+    tS = datetime.datetime.now()
+    print(insert_stats(conn, [1, str(tS) , mode_id, player_id]))
 
-def prepare_db():
-    conn = create_connection("GameResults.db")
+
+def prepare_db(conn):
+    """
+    Prepares de database with the gameMode values
+    :param conn: Connection object
+    :return: True if no errors, otherwise False
+    """
     create_df_tables(conn)
-    if getData_fromDB(conn, 'gameMode', ['*']) == '[]':
+    if getData_fromDB(conn, 'gameMode', ['*'], '') == []:
         success = []
         success.append(insert_gameMode(conn, 'solo'))
         success.append(insert_gameMode(conn, 'poly'))
@@ -115,7 +175,8 @@ def prepare_db():
         for res in success:
             if res != True:
                 print(res)
-    
+                return False
+    return True
     
 """
 -- Example table
@@ -130,4 +191,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 	FOREIGN KEY (project_id) REFERENCES projects (id)
 );
 """
-prepare_db()
+# os.remove("GameResults.db") DEBUG
+# conn = create_connection("GameResults.db") DEBUG
+# prepare_db(conn) DEBUG
+# operation_test(conn) DEBUG    

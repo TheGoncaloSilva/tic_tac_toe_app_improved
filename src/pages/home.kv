@@ -62,6 +62,25 @@
 				Rectangle:
 					size: self.width+150, self.height-55
 					pos: self.x-75, self.y+26
+		
+		Label:
+			pos_hint: {"center_x":.80, "top":.2}
+			#text: "Welcome To [size=45sp][color=#FF0000FF]X-O[/color][/size]"
+            text: "[ref=some][size=18sp][u]Leaderboard[/u][/size][/ref]"
+			markup: True
+			size_hint: [None , None]
+			font_size: '15sp'
+			bold: True
+			color: [1,1,1,1]
+            on_ref_press:
+                app.execute_show_options("", 'leaderboard', '')
+			
+			canvas.before:
+				Color:
+					rgb: utils.rgba('250448')
+				Rectangle:
+					size: self.width+35, self.height-55
+					pos: self.x-15, self.y+26
 
 		Button:
 			id: solo_player

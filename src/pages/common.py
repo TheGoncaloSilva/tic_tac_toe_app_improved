@@ -1,12 +1,15 @@
 # 
+from sqlite3 import connect
 from typing import Text
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy import utils
+import src.pages.db_control as db
 
 class Options_modals(Popup):
     def __init__(self, mode, app, opt, extra, **kwargs):
@@ -107,6 +110,7 @@ class Options_modals(Popup):
             self.add_widget(self.float)
 
         elif opt == 'winner':
+            self.auto_dismiss = True
             # title
             self.title = "game ended!".upper()
             self.title_size = '16sp'
@@ -152,6 +156,45 @@ class Options_modals(Popup):
             self.float.add_widget(self.save_btn)
             self.add_widget(self.float)
 
+        elif opt == 'leaderboard':
+            self.size_hint = [0.3, 0.6]
+            self.pos_hint = {'center_x': 0.5, "top": .8}
+            self.auto_dismiss = True
+            # title
+            self.title = "Player Leaderboard".upper()
+            self.title_size = '16sp'
+            self.title_color = [1, 1, 1, 1]
+            # separator
+            self.separator_color = [1, 1, 1, 1]
+            self.separator_height: 10
+            # get the leaderboard data
+            results = self.organize_results()
+            # print(results) DEBUG
+            # content
+            self.box = GridLayout(padding=10, spacing=10, pos_hint={
+                    'top': .99, 'center_x': .5}, cols = 2)
+            
+            lbl_player = Label(text = "Player Name",
+                                bold = True,
+                                markup = True)
+            lbl_result = Label(text = "Game Balance",
+                                bold = True,
+                                markup = True)
+            self.box.add_widget(lbl_player)
+            self.box.add_widget(lbl_result)
+
+            for i, line in enumerate(results):
+                if i >= 8: break # max number of players shown
+                lbl_player = Label(text = str(line[0]))
+                lbl_result = Label(text = str(line[1]))
+                self.box.add_widget(lbl_player)
+                self.box.add_widget(lbl_result)
+
+            # positioning widgets on the popup
+            self.float = FloatLayout()
+            self.float.add_widget(self.box)
+            self.add_widget(self.float)
+
         else: # error found
             pass
 
@@ -191,8 +234,43 @@ class Options_modals(Popup):
         else: 
             self.app.player2.player_name = asset.text[:max_size]
         self.dismiss()
-        
+    
+    def organize_results(self):
+        """
+        Organizes and returns the leaderboard orderer by game result
+        :param conn: Connection object
+        :return: lIST order by game result with the leaderboard
+        """
+        conn = db.create_connection("./src/pages/GameResults.db")
+        db.prepare_db(conn)
+        players = db.getData_fromDB(conn, 'player', ['*'], "")
+        stats = db.getData_fromDB(conn, 'stats', ['*'], "") # id, result, tS, gameMode, player_id
+        gameModes = db.getData_fromDB(conn, 'gameMode', ['*'], "")
+        conn.close()
 
+        results = []
+        for st_line in stats:
+            found = False
+            for i, line in enumerate(results):
+                if st_line[4] == line[0]:
+                    line[1] = line[1] + st_line[1]
+                    found = True
+            if not found:
+                results.append([st_line[4], st_line[1]])
+
+        for res in results:
+            name = ""
+            for player in players:
+                if res[0] == player[0]:
+                    name = player[1]
+            res[0] = name
+        
+        results.sort(reverse=True, key=self.order_funct)
+        return results
+
+    def order_funct(self, e):
+        return e[1]
+                
 # Evaluate each move made
 def analyze_moves(board):
     result = analyze_winner(board)

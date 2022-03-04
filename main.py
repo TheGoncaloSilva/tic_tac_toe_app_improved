@@ -1,4 +1,4 @@
-import math, kivy, os, sys, random, time
+import math, kivy, os, sys, random, time, datetime
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.clock import Clock
@@ -42,6 +42,7 @@ class MyApp(App):
     winner = ''
     found_winner = False
     difficulty = 0
+    can_play = True
 
     def build(self): # Construir o UI
         self.title = 'Tic Tac Toe' # Change the the name of the application window
@@ -52,12 +53,6 @@ class MyApp(App):
         Window.minimum_width, Window.minimum_height = (size_x, size_y)
         inspector.create_inspector(Window, self) # Debug
         return Builder.load_file('main.kv')
-        
-    def on_start(self):
-        """
-        Function executed on app load
-        """
-        pass
 
     def change_screen(self, sc, way):
         #if sc == 'home':
@@ -108,6 +103,7 @@ class MyApp(App):
         self.found_winner = False
         self.winner = ''
         self.turn = bool(random.getrandbits(1))    
+        self.update_scoreboard()
 
     def start_game(self):
         if self.turn:
@@ -116,6 +112,9 @@ class MyApp(App):
         elif not self.turn:
             self.active_player = self.player2.player_avatar
             self.update_info()
+
+        self.save_playersDB()
+
         if not self.turn:
             self.computer_player()
 
@@ -160,9 +159,10 @@ class MyApp(App):
         self.update_info()
 
     def player_play(self, asset):
-        if asset.background_normal == '' and not self.found_winner:
+        if asset.background_normal == '' and not self.found_winner and self.can_play:
             self.make_play(asset)
             if (not self.turn and self.mode == 'solo') and  not self.found_winner:
+                self.can_play = False
                 Clock.schedule_once(lambda x: self.computer_player(), 0.5) # make AI play and add delay
 
     def computer_player(self):
@@ -181,6 +181,7 @@ class MyApp(App):
 
         btn = self.get_id(f"{spot[0]}-{spot[1]}", True)
         self.make_play(btn)
+        self.can_play = True
 
     def get_id(self, member, get_num=False):
         ids = {'0-0': 0, '0-1': 1, '0-2': 2, '1-0': 3,
@@ -235,12 +236,70 @@ class MyApp(App):
         if data[0] == 'winner':
             self.winner = data[1]
         self.execute_show_options(self.mode, 'winner', '')
-        #score = Score(winner, app, mode)
-        #Clock.schedule_once(lambda x: score.open(), 1)
+        self.save_gameDB()
         pass
 
-    def save_db(self, data):
-        conn = db.create_connection("./src/GameResults.db")
+    def save_gameDB(self):
+        """
+        Save the game result in the database
+        :param self: @MyApp object
+        :return: True if successfull
+        """
+        conn = db.create_connection("./src/pages/GameResults.db")
+        mode_id = db.getData_fromDB(conn, 'gameMode', ['id'], f"WHERE name = '{self.mode}' ")
+        if not mode_id:
+            return mode_id
+        mode_id = mode_id[0][0]
+
+        tS = datetime.datetime.now()
+        if self.found_winner and self.winner == '': # tie
+            win1 = 0
+            win2 = 0
+        elif self.found_winner and self.winner == self.player1.player_avatar: # player1 won
+            win1 = 1
+            win2 = -1
+        else: # player2 won
+            win1 = -1
+            win2 = 1
+
+        p1_id = db.getData_fromDB(conn, 'player', ['id'], f"WHERE name = '{self.player1.player_name}' ")
+        if not p1_id:
+            return p1_id
+            
+        p1_id = p1_id[0][0]
+        query = db.insert_stats(conn, [win1, str(tS) , mode_id, p1_id])
+        if not query:
+            print(query)
+            return query
+
+        p2_id = db.getData_fromDB(conn, 'player', ['id'], f"WHERE name = '{self.player2.player_name}' ")
+        if not p2_id:
+            return p2_id
+
+        p2_id = p2_id[0][0]
+        query = db.insert_stats(conn, [win2, str(tS) , mode_id, p2_id])
+        if not query:
+            print(query)
+            return query
+
+        conn.close()
+        return True
+
+    def save_playersDB(self):
+        """
+        Check and Create, if needed, both players in the database
+        :param self: @MyApp object
+        :return:
+        """
+        conn = db.create_connection("./src/pages/GameResults.db")
+        db.prepare_db(conn)
+        if db.getData_fromDB(conn, 'player', ['id'], f"WHERE name = '{self.player1.player_name}' ") == []:
+            db.insert_player(conn, self.player1.player_name)
+        if db.getData_fromDB(conn, 'player', ['id'], f"WHERE name = '{self.player2.player_name}' ") == []:
+            db.insert_player(conn, self.player2.player_name) 
+        conn.close()
+
+    def update_scoreboard(self):
         pass
 
 if __name__ == "__main__":
