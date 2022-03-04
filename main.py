@@ -113,7 +113,7 @@ class MyApp(App):
             self.active_player = self.player2.player_avatar
             self.update_info()
 
-        self.save_playersDB()
+        #self.save_playersDB() DESCOMENTARRRRRRRRRRRRRRRRRRRRRRRR
 
         if not self.turn:
             self.computer_player()
@@ -236,8 +236,8 @@ class MyApp(App):
         if data[0] == 'winner':
             self.winner = data[1]
         self.execute_show_options(self.mode, 'winner', '')
-        self.save_gameDB()
-        pass
+        # self.save_gameDB() DESCOMENTARRRRRRRRRRRRRRRRR
+        self.update_scoreboard()
 
     def save_gameDB(self):
         """
@@ -300,7 +300,51 @@ class MyApp(App):
         conn.close()
 
     def update_scoreboard(self):
-        pass
+        net = self.root.ids[self.mode].ids
+        net.scoreboard_box.clear_widgets() # deletes all widgets inside scoreboard_box
+        # Get the scoreboard data
+
+        conn = db.create_connection("./src/pages/GameResults.db")
+        db.prepare_db(conn)
+        players = db.getData_fromDB(conn, 'player', ['*'], "")
+        gameModes = db.getData_fromDB(conn, 'gameMode', ['*'], f"WHERE name = '{self.mode}'")
+        stats = db.getData_fromDB(conn, 'stats', ['*'], f"WHERE gameMode = '{gameModes[0][0]}'") # id, result, tS, gameMode, player_id
+        conn.close()
+
+        results = []
+        for st_line in stats:
+            found = False
+            for i, line in enumerate(results):
+                if st_line[4] == line[0]:
+                    line[1] = line[1] + st_line[1]
+                    found = True
+            if not found:
+                results.append([st_line[4], st_line[1]])
+
+        for res in results:
+            name = ""
+            for player in players:
+                if res[0] == player[0]:
+                    name = player[1]
+            res[0] = name
+        
+        results.sort(reverse=True, key=self.order_funct)
+        # Columm identifiers
+        lbl_player = Label(text = "Player", bold = True, font_size="19sp")
+        lbl_result = Label(text = "Game Result", bold = True, font_size="19sp")
+        net.scoreboard_box.add_widget(lbl_player)
+        net.scoreboard_box.add_widget(lbl_result)
+
+        # Add the best 3 to the Scoreboard
+        for i in range(len(results)):
+            if i >= 3: break # max number of results to show
+            lbl_player = Label(text = str(results[i][0]), font_size="17sp")
+            lbl_result = Label(text = str(results[i][1]), font_size="17sp")
+            net.scoreboard_box.add_widget(lbl_player)
+            net.scoreboard_box.add_widget(lbl_result)
+
+    def order_funct(self, e):
+        return e[1]
 
 if __name__ == "__main__":
     app = MyApp()

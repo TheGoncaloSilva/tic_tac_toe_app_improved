@@ -79,3 +79,48 @@
 			#width: 300
 			#height:300
 			pos_hint: {'center_x':0.5, 'center_y':0.6}
+
+
+		FloatLayout:
+			id: scoreboard
+			size_hint: [0.3, 0.25]
+			pos_hint: {'center_x':0.3, 'center_y':0.15}
+			canvas.before:
+				Color: 
+					rgb: utils.get_color_from_hex('#fdcb01')
+				Rectangle:
+					pos: self.x, self.y
+					size: self.width, self.height
+
+			Label:
+				id:scoreboard_label
+				text: "Scoreboard"
+				size_y: .2
+				pos_hint: {'center_x':0.5, 'center_y':0.9}
+				color: [0,0,0,1]
+				font_size: '20sp'
+				markup: True
+				bold: True			
+			
+			GridLayout:
+				id: scoreboard_box
+				cols: 2
+				size_hint_y: .8
+				pos_hint: {'center_x':0.5, 'center_y':0.4}
+				canvas.before:
+					Color: 
+						rgb: utils.get_color_from_hex('#f60261')
+					Rectangle:
+						pos: self.x, self.y
+						size: self.width, self.height
+
+		#FloatLayout:
+		#	id: scoreboard
+		#	size_hint: [0.38, 0.25]
+		#	pos_hint: {'center_x':0.66, 'center_y':0.15}
+		#	canvas.before:
+		#		Color: 
+		#			rgb: utils.get_color_from_hex('#fdcb01')
+		#		Rectangle:
+		#			pos: self.x, self.y
+		#			size: self.width, self.height
