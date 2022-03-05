@@ -223,6 +223,9 @@ class Options_modals(Popup):
         self.dismiss()
 
     def start_game(self):
+        if self.app.mode == "poly":
+            self.app.start_game()
+            
         if self.app.active_player != "":
             #self.app.reset_screen(self.mode)
             self.dismiss()

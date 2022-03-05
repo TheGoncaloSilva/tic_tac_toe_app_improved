@@ -63,13 +63,12 @@ class MyApp(App):
         manager.current = sc
 
     def update_info(self):
-        if self.mode == 'solo':
-            grid = self.root.ids['solo'].ids
-            grid.btn_gamer.text = self.active_player
-            if self.active_player == self.player1.player_avatar:
-                grid.lbl_current.text = f"[b]Playing:[/b] {self.player1.player_name}"
-            elif self.active_player == self.player2.player_avatar:
-                grid.lbl_current.text = f"[b]Playing:[/b] {self.player2.player_name}"
+        grid = self.root.ids[self.mode].ids
+        grid.btn_gamer.text = self.active_player
+        if self.active_player == self.player1.player_avatar:
+            grid.lbl_current.text = f"[b]Playing:[/b] {self.player1.player_name}"
+        elif self.active_player == self.player2.player_avatar:
+            grid.lbl_current.text = f"[b]Playing:[/b] {self.player2.player_name}"
 
     """
         Function that runs the solo mode
@@ -89,20 +88,27 @@ class MyApp(App):
             self.execute_show_options(mode, 'name', 'player1')
             self.player2.player_name = 'BOT'
         elif mode == 'poly':
-            pass # change
+            self.execute_show_options(mode, 'name', 'player2') # Last popup appears first
+            self.execute_show_options(mode, 'name', 'player1') # Last popup appears first
 
     # reset the page values
     def reset_screen(self, mode):
+        self.found_winner = False
+        self.winner = ''
+        self.turn = bool(random.getrandbits(1))
+        
         if mode == 'solo': 
             self.execute_show_options("solo", 'difficulty', '')
             self.execute_show_options("solo", 'avatar', '')
+        elif mode == 'poly':
+            if self.turn: # player1
+                self.execute_show_options("solo", 'avatar', 'player1')
+            else: # player2
+                self.execute_show_options("solo", 'avatar', 'player2')
 
         self.remove_net()
         # check if there are already objects before creating
         self.draw_net(mode)
-        self.found_winner = False
-        self.winner = ''
-        self.turn = bool(random.getrandbits(1))    
         self.update_scoreboard()
 
     def start_game(self):
@@ -113,9 +119,9 @@ class MyApp(App):
             self.active_player = self.player2.player_avatar
             self.update_info()
 
-        #self.save_playersDB() DESCOMENTARRRRRRRRRRRRRRRRRRRRRRRR
+        # self.save_playersDB() UNCOMMENT TO SAVE RECORDS IN DB
 
-        if not self.turn:
+        if not self.turn and self.mode == 'solo':
             self.computer_player()
 
     def draw_net(self, mode):
@@ -161,7 +167,7 @@ class MyApp(App):
     def player_play(self, asset):
         if asset.background_normal == '' and not self.found_winner and self.can_play:
             self.make_play(asset)
-            if (not self.turn and self.mode == 'solo') and  not self.found_winner:
+            if not self.turn and self.mode == 'solo' and  not self.found_winner:
                 self.can_play = False
                 Clock.schedule_once(lambda x: self.computer_player(), 0.5) # make AI play and add delay
 
@@ -236,7 +242,7 @@ class MyApp(App):
         if data[0] == 'winner':
             self.winner = data[1]
         self.execute_show_options(self.mode, 'winner', '')
-        # self.save_gameDB() DESCOMENTARRRRRRRRRRRRRRRRR
+        # self.save_gameDB() UNCOMMENT TO SAVE RESULTS IN DB
         self.update_scoreboard()
 
     def save_gameDB(self):
