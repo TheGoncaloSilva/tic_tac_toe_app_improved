@@ -1,1 +1,125 @@
 #:kivy 1.0.9
+
+<Lan>:
+
+	FloatLayout:
+		size_hint: None, None
+        size: root.width, root.height
+        pos_hint: {'x': 0, 'y': 0}
+
+		canvas.before:
+            Rectangle:
+				source: 'src/img/back_img.png'
+                pos: self.pos
+                size: self.size
+
+		Button:
+			pos_hint: {"x":.01, "top":.98}
+			size_hint: [None, None]
+			height: 40
+			width: 40
+			background_normal: "src/img/back.png"
+			#Image:
+        	#	source: "src/img/back.png"
+        	#	center_x: self.parent.center_x
+        	#	center_y: self.parent.center_y
+			
+			on_release:
+				app.change_screen('home', 'down')
+		Button:
+			pos_hint: {"x":.07, "top":.98}
+			size_hint: [None, None]
+			height: 40
+			width: 40
+			bold: True
+			background_normal: 'src/img/restore.png'
+			on_release:
+				app.reset_screen('solo')
+				
+		BoxLayout:
+			id: update
+			orientation: "horizontal"
+			pos_hint: {'center_x':0.5, 'center_y':0.96}
+			size_hint: [0.25, 0.05]
+			canvas.before:
+				Color: 
+					rgb: utils.get_color_from_hex('#fdcb01')
+				Rectangle:
+					pos: self.x, self.y
+					size: self.width, self.height
+
+			Label:
+				id: lbl_current
+				text: "[b]Playing:[/b] "
+				size_hint_x: 0.7
+				markup: True
+				#size: 40, 40
+				color: [0,0,0,1]
+				font_size: '15sp'
+				#pos_hint: {"x":0.43, "top":0.98}
+		
+			Button:
+				id: btn_gamer
+				size_hint_x: 0.2
+				#size: 35, 35
+				#pos_hint: {"x":0.54, "top":0.976}
+				color: [1,1,1,1]
+				#font_size: '40sp'      
+				font_size: '15sp' 
+				text: 'X'
+				#disabled: True
+
+
+		BoxLayout:
+			id: box
+			orientation: "vertical"
+			spacing:5
+			size_hint: [0.7, 0.6]
+			#width: 300
+			#height:300
+			pos_hint: {'center_x':0.5, 'center_y':0.6}
+
+
+		FloatLayout:
+			id: scoreboard
+			size_hint: [0.3, 0.25]
+			pos_hint: {'center_x':0.3, 'center_y':0.15}
+			canvas.before:
+				Color: 
+					rgb: utils.get_color_from_hex('#fdcb01')
+				Rectangle:
+					pos: self.x, self.y
+					size: self.width, self.height
+
+			Label:
+				id:scoreboard_label
+				text: "Scoreboard"
+				size_y: .2
+				pos_hint: {'center_x':0.5, 'center_y':0.9}
+				color: [0,0,0,1]
+				font_size: '20sp'
+				markup: True
+				bold: True			
+			
+			GridLayout:
+				id: scoreboard_box
+				cols: 2
+				size_hint_y: .8
+				pos_hint: {'center_x':0.5, 'center_y':0.4}
+				canvas.before:
+					Color: 
+						rgb: utils.get_color_from_hex('#f60261')
+					Rectangle:
+						pos: self.x, self.y
+						size: self.width, self.height
+
+		FloatLayout:
+			id: scoreboard
+			size_hint: [0.38, 0.25]
+			pos_hint: {'center_x':0.66, 'center_y':0.15}
+			canvas.before:
+				Color: 
+					rgb: utils.get_color_from_hex('#fdcb01')
+				Rectangle:
+					pos: self.x, self.y
+					size: self.width, self.height

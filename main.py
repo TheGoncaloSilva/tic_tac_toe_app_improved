@@ -28,6 +28,9 @@ class Soloplayer(Screen):
 class Multiplayer(Screen):
     pass
 
+class Options(Screen):
+    pass
+
 class Lan(Screen):
     pass
 
@@ -102,9 +105,9 @@ class MyApp(App):
             self.execute_show_options("solo", 'avatar', '')
         elif mode == 'poly':
             if self.turn: # player1
-                self.execute_show_options("solo", 'avatar', 'player1')
+                self.execute_show_options("poly", 'avatar', 'player1')
             else: # player2
-                self.execute_show_options("solo", 'avatar', 'player2')
+                self.execute_show_options("poly", 'avatar', 'player2')
 
         self.remove_net()
         # check if there are already objects before creating
@@ -119,7 +122,7 @@ class MyApp(App):
             self.active_player = self.player2.player_avatar
             self.update_info()
 
-        # self.save_playersDB() UNCOMMENT TO SAVE RECORDS IN DB
+        self.save_playersDB() # UNCOMMENT TO SAVE RECORDS IN DB
 
         if not self.turn and self.mode == 'solo':
             self.computer_player()
@@ -142,7 +145,7 @@ class MyApp(App):
         if len(self.all_btns_ids) != 0:
             #net = self.root.ids['solo'].ids #, self.root.ids['poly'].ids, self.root.ids['lan'].ids]
             #net.box.clear_widgets() # deletes all widgets in the table
-            nets = [self.root.ids['solo'].ids, self.root.ids['poly'].ids, self.root.ids['lan'].ids]
+            nets = [self.root.ids['solo'].ids, self.root.ids['poly'].ids] # add , self.root.ids['lan'].ids
             for screen in nets:
                 if screen != {}: screen.box.clear_widgets() # deletes all widgets in the table
             self.all_btns_ids.clear()
@@ -242,7 +245,7 @@ class MyApp(App):
         if data[0] == 'winner':
             self.winner = data[1]
         self.execute_show_options(self.mode, 'winner', '')
-        # self.save_gameDB() UNCOMMENT TO SAVE RESULTS IN DB
+        self.save_gameDB() # UNCOMMENT TO SAVE RESULTS IN DB
         self.update_scoreboard()
 
     def save_gameDB(self):
@@ -336,6 +339,10 @@ class MyApp(App):
         
         results.sort(reverse=True, key=self.order_funct)
         # Columm identifiers
+        if len(results) == 0:
+            lbl = Label(text = "No data", bold = True, font_size="19sp")
+            net.scoreboard_box.add_widget(lbl)
+            return
         lbl_player = Label(text = "Player", bold = True, font_size="19sp")
         lbl_result = Label(text = "Game Result", bold = True, font_size="19sp")
         net.scoreboard_box.add_widget(lbl_player)

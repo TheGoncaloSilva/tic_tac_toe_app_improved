@@ -24,7 +24,14 @@ class Options_modals(Popup):
         self.background_color =  utils.get_color_from_hex("#250448")
         if opt == 'avatar':
             # title
-            self.title = "choose your symbol".upper()
+            if mode == 'solo':
+                self.title = "choose your symbol".upper()
+            elif mode == 'poly':
+                if extra == 'player1':
+                    self.title = f"{self.app.player1.player_name} choose your symbol".upper()
+                elif extra == 'player2':
+                    self.title = f"{self.app.player2.player_name} choose your symbol".upper()
+
             self.title_size = '16sp'
             self.title_color = [1, 1, 1, 1]
             # separator
@@ -127,13 +134,13 @@ class Options_modals(Popup):
                     height = 40)
                     
             if self.app.found_winner and self.app.winner != '': # winner exists
-                if self.app.mode == 'solo' and self.app.winner == self.app.player1.player_avatar:
+                if self.app.winner == self.app.player1.player_avatar:
                     self.title = "Congratulatins".upper()
                     self.info = Label(text = f"{self.app.player1.player_name} won the game", 
                                 color = [1, 1, 1, 1], 
                                 bold = True,
                                 markup = True)
-                elif self.app.mode == 'solo' and self.app.winner == self.app.player2.player_avatar:
+                elif self.app.winner == self.app.player2.player_avatar:
                     self.info = Label(text = f"{self.app.player2.player_name} has won the game", 
                                 color = [1, 1, 1, 1], 
                                 bold = True,

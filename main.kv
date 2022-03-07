@@ -3,8 +3,10 @@
 #:include 'src/pages/solo.kv'
 #:include 'src/pages/poly.kv'
 #:include 'src/pages/lan.kv'
+#:include 'src/pages/options.kv'
 
 FloatLayout:
+
         ScreenManager:
                 id: screen_manager
                 Home:
@@ -16,6 +18,11 @@ FloatLayout:
                 Multiplayer:
                         name: 'poly'
                         id: poly
+                Options:
+                        name: 'options'
+                        id: options
                 Lan:
                         name: 'lan'
                         id: lan
+
+                
