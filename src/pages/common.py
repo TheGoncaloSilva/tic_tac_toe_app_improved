@@ -12,6 +12,7 @@ from kivy import utils
 import src.pages.db_control as db
 
 class Options_modals(Popup):
+    mode = ''
     def __init__(self, mode, app, opt, extra, **kwargs):
         super(Options_modals, self).__init__(**kwargs)
         self.mode = mode
@@ -243,6 +244,8 @@ class Options_modals(Popup):
             self.app.player1.player_name = asset.text[:max_size]
         else: 
             self.app.player2.player_name = asset.text[:max_size]
+        if self.mode == 'lan':
+            self.app.update_players_lan()
         self.dismiss()
     
     def organize_results(self):

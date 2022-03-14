@@ -1,3 +1,147 @@
 #:kivy 1.0.9
 
 <Options>:
+    input_ip: input_ip
+    input_port: input_port
+    input_password: input_password
+	input_encryption: input_encryption
+
+    FloatLayout: 
+		canvas.before:
+            Rectangle:
+				source: 'src/img/back_img.png'
+                pos: self.pos
+                size: self.size
+
+        Button:
+			pos_hint: {"x":.01, "top":.98}
+			size_hint: [None, None]
+			height: 40
+			width: 40
+			background_normal: "src/img/back.png"
+			on_release:
+				app.change_screen('home', 'right')
+
+        Label:
+            text: "Lan Options"
+            pos_hint: {"x": 0, "top": 1.45}
+			font_size: '24sp'
+			font_size: self.width/25
+		
+		Button:
+			id: lan_create
+			background_color: 255, 215, 0, 1
+			color: [0,0,0,1]
+			text: "Save and Create"
+			size_hint: [.35, .1]
+			bold: True
+			italic: True
+			font_size: self.width/15
+			pos_hint: {"top": .2, 'center_x': .3}
+			on_release:
+				#app.create_server(room_name, room_ip, room_port, room_hosts, room_password, room_encryption)
+				#app.default_clients()
+				#app.add_client_view()
+
+		Button:
+			id: lan_start
+			background_color: 255, 215, 0, 1
+			color: [0,0,0,1]
+			text: "Start"
+			size_hint: [.35, .1]
+			bold: True
+			italic: True
+			font_size: self.width/15
+			pos_hint: {"top": .2, 'center_x': .7}
+			disabled: True
+			on_release:
+
+        GridLayout: 
+			id: grid
+			spacing_bottom: 5
+			cols: 2
+			size_hint: [0.4, 0.4]
+			pos_hint: {'center_x':.25, 'center_y':0.6}
+			canvas.before:
+				Color: 
+					rgb: utils.get_color_from_hex('#250448')
+				Rectangle:
+					pos: self.x - 10, self.y - 10
+					size: self.width + 20, self.height + 20
+
+			Label:
+				id: l_ip
+				text: 'Ip: '
+				bold: True
+				font_size: self.width/10
+
+			TextInput:
+				id: input_ip
+				multiline: False
+				hint_text: 'Input Ip'
+				on_text: root.insert_text(input_ip, 40)
+
+			Label:
+				id: l_port
+				text: 'Port: '
+				bold: True
+				font_size: self.width/10
+
+			TextInput:
+				id: input_port
+				multiline: False
+				input_filter: 'int'
+				hint_text: 'Port, number'
+				on_text: root.insert_number(input_port, 65535)
+
+			Label:
+				id: l_encryption
+				text: 'Data Encryption? '
+				bold: True
+				font_size: self.width/10
+
+			CheckBox:
+				id: input_encryption
+				active: False
+				on_release: 
+					root.check_press()
+
+			Label:
+				id: l_password
+				text: 'Network Password:'
+				bold: True
+            	font_size: self.width/10
+
+			TextInput:
+				id: input_password
+				multiline: False
+				disabled: not input_encryption.active
+				hint_text: 'Input Password'
+				on_text: root.insert_text(input_password, 100)
+
+
+		GridLayout: 
+			id: grid_2
+			cols: 1
+			size_hint: [0.4, 0.2]
+			pos_hint: {'center_x':0.7, 'center_y':0.7}
+			canvas.before:
+				Color: 
+					rgb: utils.get_color_from_hex('#250448')
+				Rectangle:
+					pos: self.x - 10, self.y - 10
+					size: self.width + 20, self.height + 20
+
+			Label:
+				id: l_players
+				text: 'Connected Players'
+				bold: True
+            	font_size: self.width/10
+			
+			GridLayout: 
+				id: box_active_players
+				cols: 2
+
+				
+				
+			

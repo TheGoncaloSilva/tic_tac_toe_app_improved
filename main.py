@@ -1,3 +1,4 @@
+from cgi import test
 import math, kivy, os, sys, random, time, datetime
 from kivy.app import App
 from kivy.lang import Builder
@@ -29,7 +30,33 @@ class Multiplayer(Screen):
     pass
 
 class Options(Screen):
-    pass
+    input_ip = ObjectProperty(None)
+    input_port = ObjectProperty(None)
+    input_password = ObjectProperty(None)
+    input_encryption = ObjectProperty(None)
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+    
+    # Function to reset the password field if the encryption button is pressed
+    def check_press(self):
+        if not self.input_encryption.active:
+            self.input_password.text = ""
+
+    # Function to get the Inputs size and cut the excessive
+    def insert_text(self, input, size):
+        if len(input.text) > size:
+            input.text = input.text[:size]
+    
+    # Function to not let introduce characters in number inputs
+    def insert_number(self, input, size):
+        try:
+            if int(input.text) > size:
+                input.text = size
+            elif int(input.text) <= 0:
+                input.text = "1"
+        except:
+            input.text = input.text[:len(input.text)-1]
 
 class Lan(Screen):
     pass
@@ -72,12 +99,6 @@ class MyApp(App):
             grid.lbl_current.text = f"[b]Playing:[/b] {self.player1.player_name}"
         elif self.active_player == self.player2.player_avatar:
             grid.lbl_current.text = f"[b]Playing:[/b] {self.player2.player_name}"
-
-    """
-        Function that runs the solo mode
-    """
-    def solo_engine():
-        pass
 
     def show_options(self, mode, opt, args):
         pop = Options_modals(mode, app, opt, args)
@@ -358,6 +379,22 @@ class MyApp(App):
 
     def order_funct(self, e):
         return e[1]
+
+    def setup_lan(self, mode):
+        self.execute_show_options(mode, 'name', 'player1')
+        self.change_screen('options', 'left')
+        # VERIFY IF SERVER IS RUNNING
+
+    def update_players_lan(self):
+        box = self.root.ids['options'].ids
+        box.box_active_players.clear_widgets()
+        box.box_active_players.add_widget(Label(text=self.player1.player_name + ' (me)'))
+        box.box_active_players.add_widget(Label(text=self.player1.player_ipPort))
+        box.box_active_players.add_widget(Label(text=self.player2.player_name))
+        box.box_active_players.add_widget(Label(text=self.player2.player_ipPort))
+
+    def create_server(self, ip, port, password, encryption):
+        pass
 
 if __name__ == "__main__":
     app = MyApp()
