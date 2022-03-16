@@ -1,5 +1,7 @@
 from cgi import test
-import math, kivy, os, sys, random, time, datetime
+from http import server
+import math, kivy, os, sys, random, time, datetime, threading, functools
+from xmlrpc.client import Server
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.clock import Clock
@@ -19,6 +21,8 @@ from src.pages.common import Options_modals, analyze_moves
 from src.pages.solo import ai_mode,minimax,set_scores, easy_mode
 from src.pages.player import Player
 import src.pages.db_control as db
+import src.client_server.clientTCP as client
+import src.client_server.serverTCP as server
 
 class Home(Screen):
     pass
@@ -73,6 +77,9 @@ class MyApp(App):
     found_winner = False
     difficulty = 0
     can_play = True
+    lan_enc = ''
+    lan_passw = ''
+    server_handler = ''
 
     def build(self): # Construir o UI
         self.title = 'Tic Tac Toe' # Change the the name of the application window
@@ -389,13 +396,56 @@ class MyApp(App):
         box = self.root.ids['options'].ids
         box.box_active_players.clear_widgets()
         box.box_active_players.add_widget(Label(text=self.player1.player_name + ' (me)'))
-        box.box_active_players.add_widget(Label(text=self.player1.player_ipPort))
+        box.box_active_players.add_widget(Label(text=f'{self.player1.player_ip}:{self.player1.player_port}'))
         box.box_active_players.add_widget(Label(text=self.player2.player_name))
-        box.box_active_players.add_widget(Label(text=self.player2.player_ipPort))
+        box.box_active_players.add_widget(Label(text=f'{self.player2.player_ip}:{self.player2.player_port}'))
+    
+    def check_inputs(self, values):
+        # when create_server clicked, check if the inputs have data
+        # if not popup warning
+        for input in values:
+            if input.text == '':
+                self.execute_show_options(self.mode, 'warning', '')
+                return False
+        return True
 
-    def create_server(self, ip, port, password, encryption):
-        pass
+    def initiate_server(self, ip, port, enc, passw):
+        if server.test_connection(self.room.room_ip, int(self.room.room_port)):
+            """self.server_handler = threading.Thread(
+                                target=server.initiate_server,args=(ip,
+                                                                    port,
+                                                                    enc,
+                                                                    passw),
+                                                                    daemon=True)
+            self.server_handler.start()"""
+            return True
+        return False
+    
+    def create_server(self, ip, port, enc, passw):
+        if self.check_inputs([ip, port]) == False:
+            return print(False)
 
+        self.player1.player_ip = ip.text
+        self.player1.player_port = int(port.text)
+
+        if enc.active:
+            self.lan_enc = os.urandom(16)
+        else:
+            self.lan_enc = ''
+
+        self.lan_passw = passw.text
+        print(f"Trying to create a server with ip {ip.text}:{port.text}")
+
+        if self.initiate_server(self.player1.player_ip, int(self.player1.player_port), self.lan_enc, self.lan_passw):
+            self.execute_show_options('success_s')
+            #self.cache_data()
+            #self.default_clients()
+            #Clock.schedule_interval(functools.partial(self.manage_clients), 0.1) # ADJUST REFRESH VALUE
+        else:
+            self.execute_show_options(self.mode, 'error', '')
+
+        
+            
 if __name__ == "__main__":
     app = MyApp()
     app.run()
