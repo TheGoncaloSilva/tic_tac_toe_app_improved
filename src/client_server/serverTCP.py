@@ -1,6 +1,8 @@
 from multiprocessing import cpu_count
 import socket, threading, signal, sys, base64, os, time, json
 from Crypto.Cipher import AES
+from requests import request
+from src.client_server.common import * # import all functions in the common area
 
 def signal_handler(sig, frame):
     print('\nDone!')
@@ -9,56 +11,18 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 print('Press Ctrl+C to exit...')
 
-##
-
-    # Encrypt the values given
-def encrypt_values(data):
-    # stress na encriptação de dicionários. Adaptar isso
-    if room_attributes['enc'] != '': 
-        cipher = AES.new (room_attributes['enc'], AES.MODE_ECB) # Define the encryption algorithm
-        result = cipher.encrypt(str(data)*16) # Fix padding
-        return str (base64.b64encode (result), 'utf-8') # enconde into a format to be sent
-    return data # If the connection isn't encrypted, just return the data
-
-    # Decrypt the values given
-def decrypt_values(data):
-    if room_attributes['enc'] != '':
-        try:
-            cipher = AES.new (room_attributes['enc'], AES.MODE_ECB) # Define the encryption algorithm
-            result = base64.b64decode (data) # decode the information
-            result = cipher.decrypt(result) # decrypt the information
-            result = result[0:round((len(result)/16))] # Fix the exta padding
-            # result = base64.b64decode (data) # DEBUG
-            # result = cipher.decrypt (result) # DEBUG
-            return result.decode('utf-8') # return the decrypted result
-        except Exception as e:
-            print(f'No data to decypt: {e}')
-            print(f'Data: {data}')
-            return None
-    return data # If the connection isn't encrypted, just return the data
-
-    # Convert a dictionary into bytes data using json
-def byting_dict(dictionary):
-    byted = json.dumps(dictionary)
-    return byted.encode('utf-8')
-
-    # Convert bytes data into a dictionary using json (inverse of unbyting_dict)
-def unbyting_dict(dictionary):
-    unbyted = dictionary.decode('utf-8')
-    return json.loads (unbyted)
-
     # Queue of type FILO (First in Last Out)
-def queue_client_data(data, *kwargs):
-    global s_queue
-    s_queue.append(data) # Add the data to the most recent
+def queue_client_data(data, *kwargs): # Receive data from client
+    global server_queue
+    server_queue.append(data) # Add the data to the most recent
 
     # Get the oldest queue data 
 def get_queue_client_data(*kwargs):
     try:
-        global s_queue
-        if len(s_queue) == 0: return None # Stack doesn't have any data
-        #  print(len(s_queue)) DEBUG
-        return s_queue[(len(s_queue)-1)] # return the oldest value
+        global server_queue
+        if len(server_queue) == 0: return None # Stack doesn't have any data
+        #  print(len(server_queue)) DEBUG
+        return server_queue[(len(server_queue)-1)] # return the oldest value
     except: return None # If the stack hasn't been inicialized
 
     # Remove the oldest value of the Queue and returns it
@@ -66,16 +30,42 @@ def get_queue_client_data(*kwargs):
     # and no other need for the get_queue_client_data 
 def remove_last_queue_client_data(*kwargs):
     try:
-        global s_queue
-        if len(s_queue) == 0: return None # Stack doesn't have any data
-        return s_queue.pop(len(s_queue)-1) # return and delete the oldest value
+        global server_queue
+        if len(server_queue) == 0: return None # Stack doesn't have any data
+        return server_queue.pop(len(server_queue)-1) # return and delete the oldest value
     except: return None # If the stack hasn't been inicialized
+
+    # Queue of type FILO (First in Last Out)
+def queue_server_data(data, *kwargs): # Send data to client
+    global client_queue
+    client_queue.append(data) # Add the data to the most recent
+
+    # Get the oldest queue data 
+def get_queue_server_data(*kwargs):
+    try:
+        global client_queue
+        if len(client_queue) == 0: return None # Stack doesn't have any data
+        #  print(len(server_queue)) DEBUG
+        return client_queue[(len(client_queue)-1)] # return the oldest value
+    except: return None # If the stack hasn't been inicialized
+
+    # Remove the oldest value of the Queue and returns it
+    # In other implementation, just this function could be use
+    # and no other need for the get_queue_client_data 
+def remove_last_queue_server_data(*kwargs):
+    try:
+        global client_queue
+        if len(client_queue) == 0: return None # Stack doesn't have any data
+        return client_queue.pop(len(client_queue)-1) # return and delete the oldest value
+    except: return None # If the stack hasn't been inicialized
+
+#################################### SERVER FUNCTIONS ###############################################
 
     # Function that deals with server-client interaction
 def handle_client_connection(client_socket,address): 
-    global room_attributes # global scope variable
+    global server_attributes # global scope variable
     
-    if room_attributes['enc'] != '': # if the server was started using encryption
+    if server_attributes['enc'] != '': # if the server was started using encryption
         # first we inform that the connection will be encripted and give the key
         if not inform_client(client_socket, 'encryption', ''):
             client_socket.close()
@@ -86,72 +76,71 @@ def handle_client_connection(client_socket,address):
         client_socket.close()
         return False
 
-    # Inform the client about the room's name
-    if not inform_client(client_socket, 'room_name', ''):
-        client_socket.close()
-        return False
+    # GET CLIENTS NAME
+
+    queue_client_data({'op' : 'status', 'connection' : 'established', 'ip': address}) # inform the server that client connection has been established
     
-    data = get_data(client_socket, 'refresh_rate') # Get the client choosen refresh rate
-    if not data[0]:
-        client_socket.close()
-        return False
-    else:
-        try:
-            room_attributes['refresh_rate'] = int(data[1]) # parsse the received value to integer
-        except:
-            print("ERROR: Bad conversion")
-            client_socket.close()
-            return False
-    print(f'REFRESH: {room_attributes}')
+    global threads
+    Receive_Handler = threading.Thread(target=receiveClientGameData,args=(client_socket,address),daemon=True) # handle incoming data
+    threads.append(Receive_Handler)
+    Receive_Handler.start()
+
+    Server_Handler = threading.Thread(target=sendGameDataClient,args=(client_socket,address),daemon=True) # handle outgoing data
+    threads.append(Server_Handler)
+    Server_Handler.start()
+
+def receiveClientGameData(client_socket, address):
     try:
         while True:
-            time.sleep(room_attributes['refresh_rate'])
-            data = get_data(client_socket, 'sys_info') # Ask the client for the data
-            # print(len(get_queue_client_data())) DEBUG
-            if data[0]: # data received
-                print(data[1]) 
+            request = client_socket.recv(2048) 
+            if not request: # if server connection has been terminated
+                raise Exception("Server connection terminated")
             else:
-                print(data[1]) # Error
-                client_socket.close()
-                return False
+                msg = unbyting_dict(request) # the response is received in bytes. We need to exchange it to a dictionary form again 
+                # print('From  {}:{}, Received: {}'.format(client_socket.getpeername()[0], client_socket.getpeername()[1], msg)) DEBUG
+
+                for col in msg:
+                    msg[col] = decrypt_values(msg[col])
+
+                queue_client_data(msg)
+                
     except Exception as e:
         print(f'Error: {e}')
-        return [False, 'error']
+        client_socket.close()
+        return [False, f'Error: {e}']
+
+def sendGameDataClient(client_socket, address):
+    try:
+        while True:
+            data = get_queue_server_data()
+            if data != None: # if server connection has been terminated
+
+                for col in data:
+                    data[col] = encrypt_values(data[col])
+                
+                msg = byting_dict(data)
+                client_socket.send(msg)
+                remove_last_queue_server_data()
+                
+    except Exception as e:
+        print(f'Error: {e}')
+        client_socket.close()
+        return [False, f'Error: {e}']
+
+
 
     # Function to get data from the client
-def get_data(client_socket, type):
+def send_client(client_socket, type):
     try:
-        if type == 'refresh_rate': # type of data to get from the client
+        if type == 'game_update': # type of data to get from the client
             # Example send_msg = {'op': 'data', 'type': 'request', 'field': 'refresh_rate', 'refresh_rate': '.'}
-            send_msg = byting_dict({'op': encrypt_values('data'), 'type': encrypt_values("request"), 'field': encrypt_values('refresh_rate'), 'refresh_rate': encrypt_values('.')})
+            send_msg = byting_dict({'op': encrypt_values('game'), 'type': encrypt_values("request"), 'field': encrypt_values('refresh_rate'), 'refresh_rate': encrypt_values('.')})
             client_socket.send(send_msg)
         elif type == 'sys_info': # type of data to get from the client
             # Example send_msg = {'op': 'data', 'type': 'request', 'field': 'sys_info', 'sys_info': '.'}
-            send_msg = byting_dict({'op': encrypt_values('data'), 'type': encrypt_values("request"), 'field': encrypt_values('sys_info'), 'sys_info': encrypt_values('.')})
+            send_msg = byting_dict({'op': encrypt_values('game'), 'type': encrypt_values("request"), 'field': encrypt_values('sys_info'), 'sys_info': encrypt_values('.')})
             client_socket.send(send_msg)
-        while True:
-            response = client_socket.recv(2048) # wait for response (buffer should be enough for the most amount of data)
-                                                # alternatively in other implementations this buffer should be defined by the
-                                                # header of the message itself, as that would be more secured
-            if not response: # connection with server ended
-                [False, 'error']
-            else: 
-                recv_msg = unbyting_dict(response)
-                # print('From  {}:{}, Received: {}'.format(client_socket.getpeername()[0], client_socket.getpeername()[1], recv_msg)) DEBUG
-                if decrypt_values(recv_msg['op']) == "data" and decrypt_values(recv_msg['type']) == "response": # Decrypt the values received and check the dictionary
-                    if decrypt_values(recv_msg['field']) == 'refresh_rate': 
-                        return [True, decrypt_values(recv_msg['refresh_rate'])] # refresh rate received (amount of time per second for the server to ask for system information)
-                    elif decrypt_values(recv_msg['field']) == 'sys_info': # process the client system information received
-                        # Decrypt the values received
-                        recv_msg['sys_info']['platform'] = decrypt_values(recv_msg['sys_info']['platform'])
-                        recv_msg['sys_info']['cpu'] = decrypt_values(recv_msg['sys_info']['cpu'])
-                        recv_msg['sys_info']['cpu_usage'] = decrypt_values(recv_msg['sys_info']['cpu_usage'])
-                        recv_msg['sys_info']['ram'] = decrypt_values(recv_msg['sys_info']['ram'])
-                        recv_msg['sys_info']['total_ram'] = decrypt_values(recv_msg['sys_info']['total_ram'])
-                        data = {'ip': client_socket.getpeername()[0], 'port': client_socket.getpeername()[1], 'sys_info': recv_msg['sys_info']}
-                        queue_client_data(data) # add this data to the queue for the kivy application to process
-                        return [True, recv_msg['sys_info']]
-                return [False, 'error']
+    
     except Exception as e:
         print(f'ERROR: {e}')
         return [False, 'error']
@@ -160,7 +149,7 @@ def get_data(client_socket, type):
     # Doesn't accept a response
     # There is no point to have a return from the client stating that he received the data, since we are using the TCP protocol
 def inform_client(client_socket, type, message):
-    global room_attributes # global scope variable
+    global server_attributes # global scope variable
     try:
         # Example send_msg = {'op': 'info', 'type': 'message', 'messsage': '...'}
         if type == 'message': # type of information to send to the server
@@ -170,14 +159,9 @@ def inform_client(client_socket, type, message):
         # Example send_msg = {'op': 'info', 'type': 'encryption', 'cipher': '...'}
         elif type == 'encryption': # type of information to send to the server
             # key already generated in the main.py file
-            cipher = str (base64.b64encode (room_attributes['enc']), 'utf8') # encode the key to be sent
+            cipher = str (base64.b64encode (server_attributes['enc']), 'utf8') # encode the key to be sent
             #send_msg = byting_dict({'op': encrypt_values('info'), 'type': encrypt_values('encryption'), 'cipher': cipher})
             send_msg = byting_dict({'op': 'info', 'type': 'encryption', 'cipher': cipher}) # only encrypt the cipher
-            client_socket.send(send_msg)
-            return True
-        # Example send_msg = {'op': 'info', 'type': 'room_name', 'room_name': '...'}
-        elif type == 'room_name': # type of information to send to the server
-            send_msg = byting_dict({'op': encrypt_values('info'), 'type': encrypt_values('room_name'), 'room_name': encrypt_values(room_attributes['name'])})
             client_socket.send(send_msg)
             return True
         else:
@@ -190,8 +174,8 @@ def inform_client(client_socket, type, message):
     # If the server was launched with encryption or password (it's not possible to launch the server with password and not data encryption as that wouldn't be secure)
 def authenticate_client(client_socket, address):
 
-    global room_attributes # use the variable in a global scope (needs to be referenced in every function)
-    if room_attributes['enc'] == '' or room_attributes['password'] == '': return True
+    global server_attributes # use the variable in a global scope (needs to be referenced in every function)
+    if server_attributes['enc'] == '' or server_attributes['password'] == '': return True
 
     try:
         # create the dictionary to send
@@ -213,7 +197,7 @@ def authenticate_client(client_socket, address):
                     
                     # print(decrypt_values(msg['payload'])) DEBUG
 
-                    if decrypt_values(msg['payload']) == room_attributes['password']: # Authentication successfull
+                    if decrypt_values(msg['payload']) == server_attributes['password']: # Authentication successfull
                         msg = byting_dict({'op': encrypt_values('auth'), 'type': encrypt_values("response"), 'payload': encrypt_values('success')})
                         client_socket.send(msg)
                         return True
@@ -228,7 +212,7 @@ def authenticate_client(client_socket, address):
         return False
 
     # Initiate server with the provided arguments
-def initiate_server(ip, port, max_hosts, name, enc, password):
+def initiate_server(ip, port, enc, password):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try: # Try server creation
         server_socket.bind((ip, port))
@@ -237,21 +221,28 @@ def initiate_server(ip, port, max_hosts, name, enc, password):
         return False # Server creation failed
     
     server_socket.listen(1)  # max backlog of connections
-    global s_sock
-    s_sock = server_socket # to be used on server closing
-    global room_attributes # variable to be used in the whole program
-    global s_queue # variable to be used from the kivy application to process received system information
-    s_queue = [] # initialize
+    global server_attributes # variable to be used in the whole program
+    global server_queue # variable to be used from the kivy application to process received data from client
+    server_queue = [] # initialize
+    global client_queue # variable to be used from the kivy application to send data to client
+    client_queue = [] # initialize
+    global threads
+    threads = list()
+    global sockets
+    sockets = list()
+    sockets.append(server_socket) # 1st socket = server, 2nd = client
 
     # dictionary containing the room information
-    room_attributes = {'ip': ip, 'port': port, 'max_hosts': max_hosts, 'name': name, 'enc': enc, 'password': password, 'refresh_rate': ''}
+    server_attributes = {'ip': ip, 'port': port, 'enc': enc, 'password': password}
 
     print('Listening on {}:{}'.format(ip, port))
 
     while True:
         client_sock, address = server_socket.accept()
         print(f'Accepted client connection from {address}')
-        client_handler = threading.Thread(target=handle_client_connection,args=(client_sock,address),daemon=True) # handle connection for every client
+        sockets.append(client_sock)
+        client_handler = threading.Thread(target=handle_client_connection,args=(client_sock,address),daemon=True) # establish connection  to the client
+        threads.append(client_handler)
         client_handler.start()
 
     # Test if server creation is possible and port is free
@@ -265,13 +256,14 @@ def test_connection(ip, port):
         time.sleep(2) # Make sure the server closes
         return True
 
-#def quit_server():
-#    global s_sock
-#    print('NOTICE: Server closed')
-#    s_sock.close()
+def quit_server():
+    global threads
+    for index, thread in enumerate(threads):
+            thread.join()
 
 if __name__ == "__main__":
     # Default run for testing
-    #initiate_server("0.0.0.0", 5005, 5, 'test', '', '')
-    #initiate_server("0.0.0.0", 5005, 5, 'test', b'$\xa5\xab\x8b\x1b,\xed\x98m\x8c0gV\xec$\xad', '')
-    initiate_server("0.0.0.0", 5005, 5, 'test', b'$\xa5\xab\x8b\x1b,\xed\x98m\x8c0gV\xec$\xad', 'rc1_rocks')
+    #initiate_server("0.0.0.0", 5005, '', '')
+    #initiate_server("0.0.0.0", 5005, b'$\xa5\xab\x8b\x1b,\xed\x98m\x8c0gV\xec$\xad', '')
+    initiate_server("0.0.0.0", 5005, b'$\xa5\xab\x8b\x1b,\xed\x98m\x8c0gV\xec$\xad', '1234')
+    # IP, PORT, ENCRYPTION KEY, PASSWORD

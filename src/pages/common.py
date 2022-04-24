@@ -331,7 +331,7 @@ class Options_modals(Popup):
                                 pos_hint = {'center_x': .5, "y": .03}, 
                                 size_hint = [.9, .15])
             # callbacks
-            self.save_btn.bind(on_release=lambda x: self.fade())
+            self.save_btn.bind(on_release=lambda x: self.dismiss())
             self.l_info.bind(size=self.l_info.setter('text_size'))# limits the text area to a specific size, that's a size of the widget itself
             # positioning widgets on the popup
             self.box.add_widget(self.l_info)

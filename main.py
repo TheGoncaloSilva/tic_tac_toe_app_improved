@@ -387,6 +387,9 @@ class MyApp(App):
     def order_funct(self, e):
         return e[1]
 
+
+    ################### Server ###################
+
     def setup_lan(self, mode):
         self.execute_show_options(mode, 'name', 'player1')
         self.change_screen('options', 'left')
@@ -409,15 +412,21 @@ class MyApp(App):
                 return False
         return True
 
+    def cache_data(self, ip, port):
+        # if a server is successfully created, save those inputs in a file, so that it will be easier next
+        # time to create another server
+        with open("src/Cached_lan.txt", "w") as f:
+            f.write(f"{ip}; {port};")
+
     def initiate_server(self, ip, port, enc, passw):
-        if server.test_connection(self.room.room_ip, int(self.room.room_port)):
-            """self.server_handler = threading.Thread(
+        if server.test_connection(ip, int(port)):
+            self.server_handler = threading.Thread(
                                 target=server.initiate_server,args=(ip,
                                                                     port,
                                                                     enc,
                                                                     passw),
                                                                     daemon=True)
-            self.server_handler.start()"""
+            self.server_handler.start()
             return True
         return False
     
@@ -437,13 +446,15 @@ class MyApp(App):
         print(f"Trying to create a server with ip {ip.text}:{port.text}")
 
         if self.initiate_server(self.player1.player_ip, int(self.player1.player_port), self.lan_enc, self.lan_passw):
-            self.execute_show_options('success_s')
-            #self.cache_data()
-            #self.default_clients()
-            #Clock.schedule_interval(functools.partial(self.manage_clients), 0.1) # ADJUST REFRESH VALUE
+            self.execute_show_options("lan",'success_s','')
+            self.cache_data(ip, port)
+            self.update_players_lan()
+            Clock.schedule_interval(functools.partial(self.server_conditions), 0.5) # ADJUST REFRESH VALUE
         else:
             self.execute_show_options(self.mode, 'error', '')
 
+    def server_conditions(self, *kwargs):
+        data = server.get_queue_client_data()
         
             
 if __name__ == "__main__":
