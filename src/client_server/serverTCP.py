@@ -70,16 +70,28 @@ def handle_client_connection(client_socket,address):
         if not inform_client(client_socket, 'encryption', ''):
             client_socket.close()
             return False
+    
 
     # Authenticate client connection
     if not authenticate_client(client_socket, address): # If client didn't pass authentication close connection
         client_socket.close()
         return False
 
-    # GET CLIENTS NAME
+    send_msg = byting_dict({'op': encrypt_values('status', server_attributes['enc']), 'status': encrypt_values("logged_in", server_attributes['enc'])})
+    client_socket.send(send_msg)
 
-    queue_client_data({'op' : 'status', 'connection' : 'established', 'ip': address}) # inform the server that client connection has been established
+    # GET CLIENTS NAME
+    player_name = "outside"
+
+    queue_client_data({'op' : 'status', 'connection' : 'established', 'ip': address, 'name': player_name}) # inform the server that client connection has been established
     
+    #queue_server_data({'op' : 'status', 'connection' : 'established', 'ip': address})
+    # Send the client his socket info
+    send_msg = byting_dict({'op': encrypt_values('status', server_attributes['enc']), 
+                        'connection': encrypt_values("established", server_attributes['enc']), 
+                        'ip': encrypt_values(address, server_attributes['enc'])})
+    client_socket.send(send_msg)
+
     global threads
     Receive_Handler = threading.Thread(target=receiveClientGameData,args=(client_socket,address),daemon=True) # handle incoming data
     threads.append(Receive_Handler)
@@ -90,9 +102,10 @@ def handle_client_connection(client_socket,address):
     Server_Handler.start()
 
 def receiveClientGameData(client_socket, address):
+    global server_attributes
     try:
         while True:
-            request = client_socket.recv(2048) 
+            request = client_socket.recv(4096) 
             if not request: # if server connection has been terminated
                 raise Exception("Server connection terminated")
             else:
@@ -100,7 +113,7 @@ def receiveClientGameData(client_socket, address):
                 # print('From  {}:{}, Received: {}'.format(client_socket.getpeername()[0], client_socket.getpeername()[1], msg)) DEBUG
 
                 for col in msg:
-                    msg[col] = decrypt_values(msg[col])
+                    msg[col] = decrypt_values(msg[col], server_attributes['enc'])
 
                 queue_client_data(msg)
                 
@@ -110,13 +123,14 @@ def receiveClientGameData(client_socket, address):
         return [False, f'Error: {e}']
 
 def sendGameDataClient(client_socket, address):
+    global server_attributes
     try:
         while True:
             data = get_queue_server_data()
             if data != None: # if server connection has been terminated
 
                 for col in data:
-                    data[col] = encrypt_values(data[col])
+                    data[col] = encrypt_values(data[col], server_attributes['enc'])
                 
                 msg = byting_dict(data)
                 client_socket.send(msg)
@@ -131,14 +145,15 @@ def sendGameDataClient(client_socket, address):
 
     # Function to get data from the client
 def send_client(client_socket, type):
+    global server_attributes
     try:
         if type == 'game_update': # type of data to get from the client
             # Example send_msg = {'op': 'data', 'type': 'request', 'field': 'refresh_rate', 'refresh_rate': '.'}
-            send_msg = byting_dict({'op': encrypt_values('game'), 'type': encrypt_values("request"), 'field': encrypt_values('refresh_rate'), 'refresh_rate': encrypt_values('.')})
+            send_msg = byting_dict({'op': encrypt_values('game', server_attributes['enc']), 'type': encrypt_values("request", server_attributes['enc']), 'field': encrypt_values('refresh_rate', server_attributes['enc']), 'refresh_rate': encrypt_values('.', server_attributes['enc'])})
             client_socket.send(send_msg)
         elif type == 'sys_info': # type of data to get from the client
             # Example send_msg = {'op': 'data', 'type': 'request', 'field': 'sys_info', 'sys_info': '.'}
-            send_msg = byting_dict({'op': encrypt_values('game'), 'type': encrypt_values("request"), 'field': encrypt_values('sys_info'), 'sys_info': encrypt_values('.')})
+            send_msg = byting_dict({'op': encrypt_values('game', server_attributes['enc']), 'type': encrypt_values("request", server_attributes['enc']), 'field': encrypt_values('sys_info', server_attributes['enc']), 'sys_info': encrypt_values('.', server_attributes['enc'])})
             client_socket.send(send_msg)
     
     except Exception as e:
@@ -153,7 +168,7 @@ def inform_client(client_socket, type, message):
     try:
         # Example send_msg = {'op': 'info', 'type': 'message', 'messsage': '...'}
         if type == 'message': # type of information to send to the server
-            send_msg = byting_dict({'op': encrypt_values('info'), 'type': encrypt_values('message'), 'messsage': encrypt_values(message)})
+            send_msg = byting_dict({'op': encrypt_values('info', server_attributes['enc']), 'type': encrypt_values('message', server_attributes['enc']), 'messsage': encrypt_values(message, server_attributes['enc'])})
             client_socket.send(send_msg)
             return True
         # Example send_msg = {'op': 'info', 'type': 'encryption', 'cipher': '...'}
@@ -179,7 +194,7 @@ def authenticate_client(client_socket, address):
 
     try:
         # create the dictionary to send
-        msg = byting_dict({'op': encrypt_values('auth'), 'type': encrypt_values("request"), 'payload': encrypt_values('password')})
+        msg = byting_dict({'op': encrypt_values('auth', server_attributes['enc']), 'type': encrypt_values("request", server_attributes['enc']), 'payload': encrypt_values('password', server_attributes['enc'])})
         client_socket.send(msg) # send the dictionary
         while True: # while cycle is not necessary in other implementations
             response = client_socket.recv(2048) # wait for response (buffer should be enough for the most amount of data)
@@ -193,17 +208,17 @@ def authenticate_client(client_socket, address):
                 # print('From  {}:{}, Received: {}'.format(client_socket.getpeername()[0], client_socket.getpeername()[1], msg)) DEBUG
 
                 # Check the response data
-                if decrypt_values(msg['op']) == "auth" and decrypt_values(msg['type']) == "response":
+                if decrypt_values(msg['op'], server_attributes['enc']) == "auth" and decrypt_values(msg['type'], server_attributes['enc']) == "response":
                     
                     # print(decrypt_values(msg['payload'])) DEBUG
 
-                    if decrypt_values(msg['payload']) == server_attributes['password']: # Authentication successfull
-                        msg = byting_dict({'op': encrypt_values('auth'), 'type': encrypt_values("response"), 'payload': encrypt_values('success')})
+                    if decrypt_values(msg['payload'], server_attributes['enc']) == server_attributes['password']: # Authentication successfull
+                        msg = byting_dict({'op': encrypt_values('auth', server_attributes['enc']), 'type': encrypt_values("response", server_attributes['enc']), 'payload': encrypt_values('success', server_attributes['enc'])})
                         client_socket.send(msg)
                         return True
                     else: # Provide fields not valid, raise error
                         print('Client {}:{} failed authentication'.format(address[0], address[1]))
-                        msg = byting_dict({'op': encrypt_values('auth'), 'type': encrypt_values("response"), 'payload': encrypt_values('failed')})
+                        msg = byting_dict({'op': encrypt_values('auth', server_attributes['enc']), 'type': encrypt_values("response", server_attributes['enc']), 'payload': encrypt_values('failed', server_attributes['enc'])})
                         client_socket.send(msg)
                 return False
 

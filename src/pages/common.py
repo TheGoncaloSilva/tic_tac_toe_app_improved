@@ -379,8 +379,10 @@ class Options_modals(Popup):
         max_size = 10
         if player == "player1":
             self.app.player1.player_name = asset.text[:max_size]
-        else: 
+        elif player == 'player2': 
             self.app.player2.player_name = asset.text[:max_size]
+        elif player == 'temp':
+            self.app.temp_player = asset.text[:max_size]
         if self.mode == 'lan':
             self.app.update_players_lan()
         self.dismiss()

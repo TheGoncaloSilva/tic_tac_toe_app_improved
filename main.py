@@ -73,6 +73,7 @@ class MyApp(App):
     turn = True # True = player1 and False = player2 playing
     player1 = Player()
     player2 = Player()
+    temp_player = ''
     winner = ''
     found_winner = False
     difficulty = 0
@@ -80,6 +81,7 @@ class MyApp(App):
     lan_enc = ''
     lan_passw = ''
     server_handler = ''
+    connection_mode = '' # client or server
 
     def build(self): # Construir o UI
         self.title = 'Tic Tac Toe' # Change the the name of the application window
@@ -391,18 +393,55 @@ class MyApp(App):
     ################### Server ###################
 
     def setup_lan(self, mode):
-        self.execute_show_options(mode, 'name', 'player1')
+        self.execute_show_options(mode, 'name', 'temp')
         self.change_screen('options', 'left')
-        # VERIFY IF SERVER IS RUNNING
+        # VERIFY IF SERVER IS RUNNING - IF its, stop it
+
+    def lock_inputs(self, ip, port, enc, passw, create, connect, start):
+        #disable inputs and buttons create and connect;
+        # change opacity of connect button and start button
+        ip.disabled = not ip.disabled
+        port.disabled = not port.disabled
+        enc.disabled = not enc.disabled
+        passw.disabled = not passw.disabled
+        if create.disabled == True and create.opacity == 0.0:
+            create.disabled = False
+            create.opacity = 1.0
+            start.disabled = True
+            start.opacity = 0.0
+        else:
+            create.disabled = True
+            create.opacity = 0.0
+            start.disabled = False
+            start.opacity = 1.0
+        
+        if connect.disabled == True and connect.opacity == 0.0:
+            connect.disabled = False
+            connect.opacity = 1.0
+        else:
+            connect.disabled = True
+            connect.opacity = 0.0
+
+        if self.connection_mode == 'client':
+            start.disabled = False
+            start.opacity = 0.0
+        
 
     def update_players_lan(self):
         box = self.root.ids['options'].ids
         box.box_active_players.clear_widgets()
-        box.box_active_players.add_widget(Label(text=self.player1.player_name + ' (me)'))
-        box.box_active_players.add_widget(Label(text=f'{self.player1.player_ip}:{self.player1.player_port}'))
-        box.box_active_players.add_widget(Label(text=self.player2.player_name))
-        box.box_active_players.add_widget(Label(text=f'{self.player2.player_ip}:{self.player2.player_port}'))
-    
+
+        if self.connection_mode == 'client':
+            box.box_active_players.add_widget(Label(text=self.player1.player_name))
+            box.box_active_players.add_widget(Label(text=f'{self.player1.player_ip}:{self.player1.player_port}'))
+            box.box_active_players.add_widget(Label(text=self.player2.player_name + ' (me)'))
+            box.box_active_players.add_widget(Label(text=f'{self.player2.player_ip}:{self.player2.player_port}'))
+        else:
+            box.box_active_players.add_widget(Label(text=self.player1.player_name + ' (me)'))
+            box.box_active_players.add_widget(Label(text=f'{self.player1.player_ip}:{self.player1.player_port}'))
+            box.box_active_players.add_widget(Label(text=self.player2.player_name))
+            box.box_active_players.add_widget(Label(text=f'{self.player2.player_ip}:{self.player2.player_port}'))
+
     def check_inputs(self, values):
         # when create_server clicked, check if the inputs have data
         # if not popup warning
@@ -430,10 +469,12 @@ class MyApp(App):
             return True
         return False
     
-    def create_server(self, ip, port, enc, passw):
+    def create_server(self, ip, port, enc, passw, create, connect, start):
         if self.check_inputs([ip, port]) == False:
             return print(False)
 
+        self.connection_mode = 'server'
+        self.player1.player_name = self.temp_player
         self.player1.player_ip = ip.text
         self.player1.player_port = int(port.text)
 
@@ -447,15 +488,111 @@ class MyApp(App):
 
         if self.initiate_server(self.player1.player_ip, int(self.player1.player_port), self.lan_enc, self.lan_passw):
             self.execute_show_options("lan",'success_s','')
-            self.cache_data(ip, port)
-            self.update_players_lan()
-            Clock.schedule_interval(functools.partial(self.server_conditions), 0.5) # ADJUST REFRESH VALUE
+            self.cache_data(self.player1.player_ip, int(self.player1.player_port))
+            server.queue_server_data( {'op' : 'game', 'data' : 'name', 'name': self.player1.player_name})
+            Clock.schedule_interval(functools.partial(self.server_conditions), 0.5)
+            self.lock_inputs(ip, port, enc, passw, create, connect, start)
         else:
             self.execute_show_options(self.mode, 'error', '')
 
     def server_conditions(self, *kwargs):
         data = server.get_queue_client_data()
+        try:
+            # {'op' : 'status', 'connection' : 'established', 'ip': address}
+            if data['op'] == "status" and data['connection'] == "established":
+                self.player2.player_ip = data['ip'][0]
+                self.player2.player_port = data['ip'][1]
+                #self.player2.player_name = data['name']
+
+            # {'op' : 'game', 'data' : 'reset'}
+
+            # {'op' : 'game', 'data' : 'name', 'name': ''}
+            elif data['op'] == 'game' and data['data'] == 'name':
+                self.player2.player_name = data['name']
+            
+            # {'op' : 'game', 'data' ; 'turn', 'player': ''}
+
+            # {'op' : 'game', 'data' : 'avatar', 'avatar' : ''}
+
+            # {'op' : 'game', 'data' : 'update', 'position' : [x,y]}
+
+            # {'op' : 'game', 'data' : 'result', 'result' : '', 'player' : ''} -> tie, winner
+
+            server.remove_last_queue_client_data()
+        except Exception as e:
+            pass
+
+        self.update_players_lan()
+
+    
         
+    ############## Client #################
+
+    def initiate_client(self, ip, port, enc, passw):
+        #if not server.test_connection(ip, int(port)):
+        if True:
+            self.server_handler = threading.Thread(
+                                target=client.connect_server,args=(ip,
+                                                                    port,
+                                                                    enc,
+                                                                    passw),
+                                                                    daemon=True)
+            self.server_handler.start()
+            return True
+        return False
+
+    def connect_server(self, ip, port, enc, passw, create, connect, start):
+        if self.check_inputs([ip, port]) == False:
+            return print(False)
+        
+        self.connection_mode = 'client'
+        self.player2.player_name = self.temp_player
+        self.player1.player_ip = ip.text
+        self.player1.player_port = int(port.text)
+
+        self.lan_enc = ''
+
+        self.lan_passw = passw.text
+        print(f"Trying to connect a server with ip {ip.text}:{port.text}")
+
+        if self.initiate_client(self.player1.player_ip, int(self.player1.player_port), self.lan_enc, self.lan_passw):
+            self.execute_show_options("lan",'success_s','')
+            self.cache_data(self.player1.player_ip, int(self.player1.player_port))
+            self.lock_inputs(ip, port, enc, passw, create, connect, start)
+            Clock.schedule_interval(functools.partial(self.client_operation), 0.5)
+            client.queue_Client_data({'op' : 'game', 'data' : 'name', 'name': self.player2.player_name})
+        else:
+            self.execute_show_options(self.mode, 'error', '')
+
+    def client_operation(self, *kwargs):
+        data = client.get_queue_Server_data()
+        #print(data)
+        try:
+            # {'op' : 'status', 'connection' : 'established', 'ip': address}
+            if data['op'] == "status" and data['connection'] == "established":
+                self.player2.player_ip = data['ip'][0]
+                self.player2.player_port = data['ip'][1]
+
+            # {'op' : 'game', 'data' : 'reset'}
+
+            # {'op' : 'game', 'data' : 'name', 'name': ''}
+            elif data['op'] == 'game' and data['data'] == 'name':
+                self.player1.player_name = data['name']
+            
+            # {'op' : 'game', 'data' ; 'turn', 'player': ''}
+
+            # {'op' : 'game', 'data' : 'avatar', 'avatar' : ''}
+
+            # {'op' : 'game', 'data' : 'update', 'position' : [x,y]}
+
+            # {'op' : 'game', 'data' : 'result', 'result' : '', 'player' : ''} -> tie, winner
+
+            client.remove_last_queue_Server_data()
+        except Exception as e:
+            pass
+
+        self.update_players_lan()
+
             
 if __name__ == "__main__":
     app = MyApp()

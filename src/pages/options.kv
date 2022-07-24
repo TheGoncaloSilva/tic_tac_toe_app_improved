@@ -39,7 +39,7 @@
 			font_size: self.width/15
 			pos_hint: {"top": .2, 'center_x': .3}
 			on_release:
-				app.create_server(input_ip, input_port, input_encryption, input_password)
+				app.create_server(input_ip, input_port, input_encryption, input_password, lan_create, lan_connect, lan_start)
 
 		Button:
 			id: lan_start
@@ -52,10 +52,26 @@
 			font_size: self.width/15
 			pos_hint: {"top": .2, 'center_x': .7}
 			disabled: True
+			opacity: 0.0
 			on_release:
 				app.change_screen('solo', 'up')
 				app.reset_screen('solo')
 				#app.player_names("solo")
+
+		Button:
+			id: lan_connect
+			background_color: 255, 215, 0, 1
+			color: [0,0,0,1]
+			text: "Connect"
+			size_hint: [.35, .1]
+			bold: True
+			italic: True
+			font_size: self.width/15
+			pos_hint: {"top": .2, 'center_x': .7}
+			disabled: False
+			opacity: 1.0
+			on_release:
+				app.connect_server(input_ip, input_port, input_encryption, input_password, lan_create, lan_connect, lan_start)
 
         GridLayout: 
 			id: grid
