@@ -27,7 +27,7 @@ class Options_modals(Popup):
             # title
             if mode == 'solo':
                 self.title = "choose your symbol".upper()
-            elif mode == 'poly':
+            elif mode == 'poly' or mode == 'lan':
                 if extra == 'player1':
                     self.title = f"{self.app.player1.player_name} choose your symbol".upper()
                 elif extra == 'player2':
@@ -368,7 +368,7 @@ class Options_modals(Popup):
         self.dismiss()
 
     def start_game(self):
-        if self.app.mode == "poly":
+        if self.app.mode == "poly" or self.app.mode == "lan":
             self.app.start_game()
             
         if self.app.active_player != "":

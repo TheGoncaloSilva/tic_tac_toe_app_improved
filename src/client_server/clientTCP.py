@@ -64,6 +64,7 @@ def remove_last_queue_Client_data(*kwargs):
     # Principal function to operate the client 
 def pair_wServer(client_sock):
     global server_attributes
+
     while True:
         try: 
             server_msg = client_sock.recv(2048) # wait for response (buffer should be enough for the most amount of data)
@@ -154,7 +155,7 @@ def receiveServerGameData(client_socket):
             else:
                 msg = unbyting_dict(request) # the response is received in bytes. We need to exchange it to a dictionary form again 
                 # print('From  {}:{}, Received: {}'.format(client_socket.getpeername()[0], client_socket.getpeername()[1], msg)) DEBUG
-                print(msg)
+                
                 for col in msg:
                     msg[col] = decrypt_values(msg[col], server_attributes['enc'])
 
@@ -213,14 +214,14 @@ def connect_server(ip, port, enc, password):
 
     if not connection_establisher.is_alive():
         threads.pop()
+        
+    Receive_Handler = threading.Thread(target=receiveServerGameData,args=(client_sock,),daemon=True) # handle incoming data
+    threads.append(Receive_Handler)
+    Receive_Handler.start()
 
-        Receive_Handler = threading.Thread(target=receiveServerGameData,args=(client_sock,),daemon=True) # handle incoming data
-        threads.append(Receive_Handler)
-        Receive_Handler.start()
-
-        Server_Handler = threading.Thread(target=sendGameDataServer,args=(client_sock,),daemon=True) # handle outgoing data
-        threads.append(Server_Handler)
-        Server_Handler.start()
+    Server_Handler = threading.Thread(target=sendGameDataServer,args=(client_sock,),daemon=True) # handle outgoing data
+    threads.append(Server_Handler)
+    Server_Handler.start()
 
 def exit_server():
     pass

@@ -82,6 +82,7 @@ class MyApp(App):
     lan_passw = ''
     server_handler = ''
     connection_mode = '' # client or server
+    start = ''
 
     def build(self): # Construir o UI
         self.title = 'Tic Tac Toe' # Change the the name of the application window
@@ -90,7 +91,7 @@ class MyApp(App):
         size_y = 700
         Window.size = (size_x, size_y)
         Window.minimum_width, Window.minimum_height = (size_x, size_y)
-        inspector.create_inspector(Window, self) # Debug
+        inspector.create_inspector(Window, self) # Debug (ctrl + 'e')
         return Builder.load_file('main.kv')
 
     def change_screen(self, sc, way):
@@ -128,7 +129,8 @@ class MyApp(App):
     def reset_screen(self, mode):
         self.found_winner = False
         self.winner = ''
-        self.turn = bool(random.getrandbits(1))
+        if self.connection_mode != 'client':
+            self.turn = bool(random.getrandbits(1))
         
         if mode == 'solo': 
             self.execute_show_options("solo", 'difficulty', '')
@@ -138,6 +140,13 @@ class MyApp(App):
                 self.execute_show_options("poly", 'avatar', 'player1')
             else: # player2
                 self.execute_show_options("poly", 'avatar', 'player2')
+        elif mode == 'lan' and self.connection_mode == 'server':
+            if self.turn: # player1
+                server.queue_server_data({'op' : 'game', 'data' : 'turn', 'player' : 'player1'})
+                self.execute_show_options("lan", 'avatar', 'player1')
+                server.queue_server_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player1.player_avatar})
+            else: # client player
+                server.queue_server_data({'op' : 'game', 'data' : 'turn', 'player' : 'player2'})
 
         self.remove_net()
         # check if there are already objects before creating
@@ -418,9 +427,11 @@ class MyApp(App):
         if connect.disabled == True and connect.opacity == 0.0:
             connect.disabled = False
             connect.opacity = 1.0
+            connect.size_hint = [.9, .15]
         else:
             connect.disabled = True
             connect.opacity = 0.0
+            connect.size_hint = [0, 0]
 
         if self.connection_mode == 'client':
             start.disabled = False
@@ -489,9 +500,11 @@ class MyApp(App):
         if self.initiate_server(self.player1.player_ip, int(self.player1.player_port), self.lan_enc, self.lan_passw):
             self.execute_show_options("lan",'success_s','')
             self.cache_data(self.player1.player_ip, int(self.player1.player_port))
+            self.lock_inputs(ip, port, enc, passw, create, connect, start)
+            start.disabled = True # Only start with 2 players
+            self.start = start
             server.queue_server_data( {'op' : 'game', 'data' : 'name', 'name': self.player1.player_name})
             Clock.schedule_interval(functools.partial(self.server_conditions), 0.5)
-            self.lock_inputs(ip, port, enc, passw, create, connect, start)
         else:
             self.execute_show_options(self.mode, 'error', '')
 
@@ -505,6 +518,7 @@ class MyApp(App):
                 #self.player2.player_name = data['name']
 
             # {'op' : 'game', 'data' : 'reset'}
+
 
             # {'op' : 'game', 'data' : 'name', 'name': ''}
             elif data['op'] == 'game' and data['data'] == 'name':
@@ -522,6 +536,8 @@ class MyApp(App):
         except Exception as e:
             pass
 
+        if self.player2.player_name == "":
+            self.start.disabled = False
         self.update_players_lan()
 
     
@@ -574,12 +590,19 @@ class MyApp(App):
                 self.player2.player_port = data['ip'][1]
 
             # {'op' : 'game', 'data' : 'reset'}
+                # self.turn = 1 ou 0
+                # reset_screen
+                # se
 
             # {'op' : 'game', 'data' : 'name', 'name': ''}
             elif data['op'] == 'game' and data['data'] == 'name':
                 self.player1.player_name = data['name']
             
             # {'op' : 'game', 'data' ; 'turn', 'player': ''}
+                # self.turn = 1 ou 0
+                # if 'player' == 'player2'
+                    #self.execute_show_options("lan", 'avatar', 'player2')
+                    #client.queue_Client_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player2.player_avatar})
 
             # {'op' : 'game', 'data' : 'avatar', 'avatar' : ''}
 

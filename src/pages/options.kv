@@ -51,12 +51,12 @@
 			italic: True
 			font_size: self.width/15
 			pos_hint: {"top": .2, 'center_x': .7}
-			disabled: True
+			disabled: False
 			opacity: 0.0
 			on_release:
-				app.change_screen('solo', 'up')
-				app.reset_screen('solo')
-				#app.player_names("solo")
+				app.change_screen('lan', 'up')
+				app.reset_screen('lan')
+				#app.player_names("lan")
 
 		Button:
 			id: lan_connect
