@@ -153,6 +153,7 @@ def receiveServerGameData(client_socket):
             if not request: # if server connection has been terminated
                 raise Exception("Server connection terminated")
             else:
+                print(request)
                 msg = unbyting_dict(request) # the response is received in bytes. We need to exchange it to a dictionary form again 
                 # print('From  {}:{}, Received: {}'.format(client_socket.getpeername()[0], client_socket.getpeername()[1], msg)) DEBUG
                 
@@ -162,7 +163,7 @@ def receiveServerGameData(client_socket):
                 queue_Server_data(msg)
                 
     except Exception as e:
-        print(f'Error: {e}')
+        print(f'Error1: {e}')
         client_socket.close()
         return [False, f'Error: {e}']
 
@@ -181,7 +182,7 @@ def sendGameDataServer(client_socket):
                 remove_last_queue_Client_data()
                 
     except Exception as e:
-        print(f'Error: {e}')
+        print(f'Error2: {e}')
         client_socket.close()
         return [False, f'Error: {e}']
 

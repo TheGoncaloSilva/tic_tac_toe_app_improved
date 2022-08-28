@@ -85,12 +85,12 @@ def handle_client_connection(client_socket,address):
 
     queue_client_data({'op' : 'status', 'connection' : 'established', 'ip': address, 'name': player_name}) # inform the server that client connection has been established
     
-    #queue_server_data({'op' : 'status', 'connection' : 'established', 'ip': address})
+    queue_server_data({'op' : 'status', 'connection' : 'established', 'ip': address})
     # Send the client his socket info
-    send_msg = byting_dict({'op': encrypt_values('status', server_attributes['enc']), 
-                        'connection': encrypt_values("established", server_attributes['enc']), 
-                        'ip': encrypt_values(address, server_attributes['enc'])})
-    client_socket.send(send_msg)
+    #send_msg = byting_dict({'op': encrypt_values('status', server_attributes['enc']), 
+    #                    'connection': encrypt_values("established", server_attributes['enc']), 
+    #                    'ip': encrypt_values(address, server_attributes['enc'])})
+    #client_socket.send(send_msg)
 
     global threads
     Receive_Handler = threading.Thread(target=receiveClientGameData,args=(client_socket,address),daemon=True) # handle incoming data

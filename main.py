@@ -145,8 +145,16 @@ class MyApp(App):
                 server.queue_server_data({'op' : 'game', 'data' : 'turn', 'player' : 'player1'})
                 self.execute_show_options("lan", 'avatar', 'player1')
                 server.queue_server_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player1.player_avatar})
+                self.can_play = True
             else: # client player
                 server.queue_server_data({'op' : 'game', 'data' : 'turn', 'player' : 'player2'})
+                self.can_play = False
+        elif mode == 'lan' and self.connection_mode == 'client':
+            if not self.turn: #player2
+                self.execute_show_options("lan", 'avatar', 'player2')
+                client.queue_Client_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player2.player_avatar})
+                self.can_play = True
+
 
         self.remove_net()
         # check if there are already objects before creating
@@ -209,9 +217,12 @@ class MyApp(App):
     def player_play(self, asset):
         if asset.background_normal == '' and not self.found_winner and self.can_play:
             self.make_play(asset)
-            if not self.turn and self.mode == 'solo' and  not self.found_winner:
+            if not self.turn and self.mode == 'solo' and not self.found_winner:
                 self.can_play = False
                 Clock.schedule_once(lambda x: self.computer_player(), 0.5) # make AI play and add delay
+            if not self.turn and self.mode == 'lan' and not self.found_winner:
+                self.can_play = not self.can_play
+                #send choosen spot
 
     def computer_player(self):
         if self.mode != 'solo': return
@@ -598,9 +609,15 @@ class MyApp(App):
             elif data['op'] == 'game' and data['data'] == 'name':
                 self.player1.player_name = data['name']
             
-            # {'op' : 'game', 'data' ; 'turn', 'player': ''}
+            # {'op' : 'game', 'data' : 'turn', 'player': ''}
+            elif data['op'] == 'game' and data['data'] == 'turn':
+                if data['player'] == "player1":
+                    self.turn = 1
+                elif data['player'] == "player2":
+                    self.turn = 0
+                    self.change_screen('lan', 'up')
+                    self.reset_screen('lan')
                 # self.turn = 1 ou 0
-                # if 'player' == 'player2'
                     #self.execute_show_options("lan", 'avatar', 'player2')
                     #client.queue_Client_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player2.player_avatar})
 
