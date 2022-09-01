@@ -105,10 +105,19 @@ def receiveClientGameData(client_socket, address):
     global server_attributes
     try:
         while True:
-            request = client_socket.recv(4096) 
-            if not request: # if server connection has been terminated
+            header = client_socket.recv(1) 
+            if not header: # if server connection has been terminated
                 raise Exception("Server connection terminated")
             else:
+                while True:
+                    header += client_socket.recv(1)
+                    if ':' in header.decode('utf-8'):
+                        break
+                buffSize = (header.decode('utf-8')).split(':')[0]
+                #print(buffSize)
+                request = client_socket.recv(int(buffSize))
+                print(request)
+
                 msg = unbyting_dict(request) # the response is received in bytes. We need to exchange it to a dictionary form again 
                 # print('From  {}:{}, Received: {}'.format(client_socket.getpeername()[0], client_socket.getpeername()[1], msg)) DEBUG
 
@@ -118,7 +127,7 @@ def receiveClientGameData(client_socket, address):
                 queue_client_data(msg)
                 
     except Exception as e:
-        print(f'Error: {e}')
+        print(f'Error Reception: {e}')
         client_socket.close()
         return [False, f'Error: {e}']
 
@@ -133,11 +142,14 @@ def sendGameDataClient(client_socket, address):
                     data[col] = encrypt_values(data[col], server_attributes['enc'])
                 
                 msg = byting_dict(data)
+                headerSize = len(msg)
+                header = (str(headerSize) + ':').encode('utf-8')
+                client_socket.send(header)
                 client_socket.send(msg)
                 remove_last_queue_server_data()
                 
     except Exception as e:
-        print(f'Error: {e}')
+        print(f'Error Sending: {e}')
         client_socket.close()
         return [False, f'Error: {e}']
 

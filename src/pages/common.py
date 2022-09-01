@@ -370,6 +370,7 @@ class Options_modals(Popup):
     def start_game(self):
         if self.app.mode == "poly" or self.app.mode == "lan":
             self.app.start_game()
+        
             
         if self.app.active_player != "":
             #self.app.reset_screen(self.mode)

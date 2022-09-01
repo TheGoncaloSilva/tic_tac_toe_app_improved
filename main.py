@@ -144,15 +144,15 @@ class MyApp(App):
             if self.turn: # player1
                 server.queue_server_data({'op' : 'game', 'data' : 'turn', 'player' : 'player1'})
                 self.execute_show_options("lan", 'avatar', 'player1')
-                server.queue_server_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player1.player_avatar})
+                #server.queue_server_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player1.player_avatar})
                 self.can_play = True
             else: # client player
                 server.queue_server_data({'op' : 'game', 'data' : 'turn', 'player' : 'player2'})
                 self.can_play = False
-        elif mode == 'lan' and self.connection_mode == 'client':
+        elif mode == 'lan' and self.connection_mode == 'client' and self.player1.player_avatar == "" and self.player2.player_avatar == "":  # 1st config
             if not self.turn: #player2
                 self.execute_show_options("lan", 'avatar', 'player2')
-                client.queue_Client_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player2.player_avatar})
+                #client.queue_Client_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player2.player_avatar})
                 self.can_play = True
 
 
@@ -162,17 +162,27 @@ class MyApp(App):
         self.update_scoreboard()
 
     def start_game(self):
-        if self.turn:
-            self.active_player = self.player1.player_avatar
-            self.update_info()
-        elif not self.turn:
-            self.active_player = self.player2.player_avatar
-            self.update_info()
+        if self.mode != "lan":
+            if self.turn:
+                self.active_player = self.player1.player_avatar
+                self.update_info()
+            elif not self.turn:
+                self.active_player = self.player2.player_avatar
+                self.update_info()
 
-        self.save_playersDB() # UNCOMMENT TO SAVE RECORDS IN DB
+            self.save_playersDB() # UNCOMMENT TO SAVE RECORDS IN DB
 
-        if not self.turn and self.mode == 'solo':
-            self.computer_player()
+            if not self.turn and self.mode == 'solo':
+                self.computer_player()
+        else:
+            if self.turn: # player 1
+                self.active_player = self.player1.player_avatar
+                server.queue_server_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player1.player_avatar})
+                self.update_info()
+            elif not self.turn: # player 2
+                self.active_player = self.player2.player_avatar
+                client.queue_Client_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player2.player_avatar})
+                self.update_info()
 
     def draw_net(self, mode):
         self.mode = mode
@@ -222,7 +232,12 @@ class MyApp(App):
                 Clock.schedule_once(lambda x: self.computer_player(), 0.5) # make AI play and add delay
             if not self.turn and self.mode == 'lan' and not self.found_winner:
                 self.can_play = not self.can_play
-                #send choosen spot
+                ids = {'0-0': 0, '0-1': 1, '0-2': 2, '1-0': 3,
+                       '1-1': 4, '1-2': 5, '2-0': 6, '2-1': 7, '2-2': 8}
+                if self.connection_mode == 'client':
+                    client.queue_Client_data({'op' : 'game', 'data' : 'update', 'position' : f'{ids[asset.text]}'}) #send choosen spot
+                if self.connection_mode == 'server':
+                    server.queue_server_data({'op' : 'game', 'data' : 'update', 'position' : f'{ids[asset.text]}'}) #send choosen spot
 
     def computer_player(self):
         if self.mode != 'solo': return
@@ -538,8 +553,22 @@ class MyApp(App):
             # {'op' : 'game', 'data' ; 'turn', 'player': ''}
 
             # {'op' : 'game', 'data' : 'avatar', 'avatar' : ''}
+            elif data['op'] == 'game' and data['data'] == 'avatar':
+                self.player2.player_avatar = data['avatar'] # client avatar
+                if data['avatar'] == 'x':
+                    self.player1.player_avatar = 'o' # server avatar
+                else:
+                    self.player1.player_avatar = 'x' # server avatar
+                self.active_player = self.player2.player_avatar
 
-            # {'op' : 'game', 'data' : 'update', 'position' : [x,y]}
+            # {'op' : 'game', 'data' : 'update', 'position' : 'id'}
+            elif data['op'] == 'game' and data['data'] == 'update':
+                pos = int(data['position'])
+                if pos >= 0 and pos < 9:
+                    #btn = self.get_id(f"{spot[0]}-{spot[1]}", True)
+                    btn = self.all_btns_ids[pos]
+                    self.make_play(btn)
+                    self.can_play = True
 
             # {'op' : 'game', 'data' : 'result', 'result' : '', 'player' : ''} -> tie, winner
 
@@ -622,8 +651,26 @@ class MyApp(App):
                     #client.queue_Client_data({'op' : 'game', 'data' : 'avatar', 'avatar' : self.player2.player_avatar})
 
             # {'op' : 'game', 'data' : 'avatar', 'avatar' : ''}
+            elif data['op'] == 'game' and data['data'] == 'avatar':
+                self.player1.player_avatar = data['avatar'] # server avatar
+                if data['avatar'] == 'x':
+                    self.player2.player_avatar = 'o' # client avatar
+                else:
+                    self.player2.player_avatar = 'x' # client avatar
+                self.can_play = False
+                self.change_screen('lan', 'up')
+                self.reset_screen('lan')
+                self.active_player = self.player1.player_avatar
 
-            # {'op' : 'game', 'data' : 'update', 'position' : [x,y]}
+            # {'op' : 'game', 'data' : 'update', 'position' : 'id'}
+            elif data['op'] == 'game' and data['data'] == 'update':
+                pos = int(data['position'])
+                if pos >= 0 and pos < 9:
+                    #btn = self.get_id(f"{spot[0]}-{spot[1]}", True)
+                    btn = self.all_btns_ids[pos]
+                    self.make_play(btn)
+                    self.can_play = True
+
 
             # {'op' : 'game', 'data' : 'result', 'result' : '', 'player' : ''} -> tie, winner
 
