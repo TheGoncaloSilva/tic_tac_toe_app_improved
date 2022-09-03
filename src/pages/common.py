@@ -149,16 +149,18 @@ class Options_modals(Popup):
                                 color = [1, 1, 1, 1], 
                                 bold = True,
                                 markup = True)
-
-            self.save_btn = Button(text="Restart", background_normal='', background_color=[255, 215, 0, 1], color=[
-                            0, 0, 0, 1], font_size="18sp", bold=True, pos_hint={'center_x': .5, "y": .03}, size_hint=[.9, .15])
+            if self.app.mode != "lan" or (self.app.mode == "lan" and self.app.connection_mode != "client"):
+                self.save_btn = Button(text="Restart", background_normal='', background_color=[255, 215, 0, 1], color=[
+                                0, 0, 0, 1], font_size="18sp", bold=True, pos_hint={'center_x': .5, "y": .03}, size_hint=[.9, .15])
             # callbacks
-            self.save_btn.bind(on_release=lambda x: self.reset_game())
+            if self.app.mode != "lan" or (self.app.mode == "lan" and self.app.connection_mode != "client"):
+                self.save_btn.bind(on_release=lambda x: self.reset_game())
             # positioning widgets on the popup
             self.box.add_widget(self.info)
             self.float = FloatLayout()
             self.float.add_widget(self.box)
-            self.float.add_widget(self.save_btn)
+            if self.app.mode != "lan" or (self.app.mode == "lan" and self.app.connection_mode != "client"):
+                self.float.add_widget(self.save_btn)
             self.add_widget(self.float)
 
         elif opt == 'leaderboard':
@@ -348,14 +350,22 @@ class Options_modals(Popup):
             self.x_btn.background_color = utils.get_color_from_hex("#847878")
             self.o_btn.background_color = utils.get_color_from_hex("#f60261")
             self.o_btn.color=[1, 1, 1, 1]
-            self.app.player1.player_avatar = 'x'
-            self.app.player2.player_avatar = 'o'
+            if self.app.mode == "lan" and self.app.connection_mode == "client":
+                self.app.player2.player_avatar = 'x'
+                self.app.player1.player_avatar = 'o'
+            else:
+                self.app.player1.player_avatar = 'x'
+                self.app.player2.player_avatar = 'o'
         elif symbol == "o":
             self.o_btn.background_color = utils.get_color_from_hex("#847878")
             self.x_btn.background_color = utils.get_color_from_hex("#00ebea")
             self.x_btn.color = [0, 0, 0, 1]
-            self.app.player1.player_avatar = 'o'
-            self.app.player2.player_avatar = 'x'
+            if self.app.mode == "lan" and self.app.connection_mode == "client":
+                self.app.player2.player_avatar = 'o'
+                self.app.player1.player_avatar = 'x'
+            else:
+                self.app.player1.player_avatar = 'o'
+                self.app.player2.player_avatar = 'x'
         self.app.active_player = symbol
     
     def difficulty(self, value):

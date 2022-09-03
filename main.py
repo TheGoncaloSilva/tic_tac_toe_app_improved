@@ -126,11 +126,14 @@ class MyApp(App):
             self.execute_show_options(mode, 'name', 'player1') # Last popup appears first
 
     # reset the page values
-    def reset_screen(self, mode):
+    def reset_screen(self, mode, resetDenied=False):
+        if resetDenied: return # Pre-condition to deal with clients resseting on the game menu
+
         self.found_winner = False
         self.winner = ''
         if self.connection_mode != 'client':
             self.turn = bool(random.getrandbits(1))
+            #self.turn = 0
         
         if mode == 'solo': 
             self.execute_show_options("solo", 'difficulty', '')
@@ -202,7 +205,7 @@ class MyApp(App):
         if len(self.all_btns_ids) != 0:
             #net = self.root.ids['solo'].ids #, self.root.ids['poly'].ids, self.root.ids['lan'].ids]
             #net.box.clear_widgets() # deletes all widgets in the table
-            nets = [self.root.ids['solo'].ids, self.root.ids['poly'].ids] # add , self.root.ids['lan'].ids
+            nets = [self.root.ids['solo'].ids, self.root.ids['poly'].ids, self.root.ids['lan'].ids] # add , self.root.ids['lan'].ids
             for screen in nets:
                 if screen != {}: screen.box.clear_widgets() # deletes all widgets in the table
             self.all_btns_ids.clear()
@@ -230,7 +233,7 @@ class MyApp(App):
             if not self.turn and self.mode == 'solo' and not self.found_winner:
                 self.can_play = False
                 Clock.schedule_once(lambda x: self.computer_player(), 0.5) # make AI play and add delay
-            if not self.turn and self.mode == 'lan' and not self.found_winner:
+            if self.mode == 'lan':
                 self.can_play = not self.can_play
                 ids = {'0-0': 0, '0-1': 1, '0-2': 2, '1-0': 3,
                        '1-1': 4, '1-2': 5, '2-0': 6, '2-1': 7, '2-2': 8}
@@ -309,6 +312,11 @@ class MyApp(App):
         self.found_winner = True
         if data[0] == 'winner':
             self.winner = data[1]
+        if self.mode == 'lan' and self.connection_mode == 'server':
+            if self.winner == "":
+                server.queue_server_data({'op' : 'game', 'data' : 'result', 'result' : data[0]})
+            else:
+                server.queue_server_data({'op' : 'game', 'data' : 'result', 'result' : data[0], 'player' : self.winner})
         self.execute_show_options(self.mode, 'winner', '')
         self.save_gameDB() # UNCOMMENT TO SAVE RESULTS IN DB
         self.update_scoreboard()
@@ -560,6 +568,7 @@ class MyApp(App):
                 else:
                     self.player1.player_avatar = 'x' # server avatar
                 self.active_player = self.player2.player_avatar
+                self.update_info()
 
             # {'op' : 'game', 'data' : 'update', 'position' : 'id'}
             elif data['op'] == 'game' and data['data'] == 'update':
@@ -630,6 +639,8 @@ class MyApp(App):
                 self.player2.player_port = data['ip'][1]
 
             # {'op' : 'game', 'data' : 'reset'}
+            elif data['op'] == 'game' and data['data'] == 'reset':
+                print("reset")
                 # self.turn = 1 ou 0
                 # reset_screen
                 # se
@@ -640,6 +651,8 @@ class MyApp(App):
             
             # {'op' : 'game', 'data' : 'turn', 'player': ''}
             elif data['op'] == 'game' and data['data'] == 'turn':
+                self.player1.player_avatar = ''
+                self.player2.player_avatar = ''
                 if data['player'] == "player1":
                     self.turn = 1
                 elif data['player'] == "player2":
@@ -661,6 +674,7 @@ class MyApp(App):
                 self.change_screen('lan', 'up')
                 self.reset_screen('lan')
                 self.active_player = self.player1.player_avatar
+                self.update_info()
 
             # {'op' : 'game', 'data' : 'update', 'position' : 'id'}
             elif data['op'] == 'game' and data['data'] == 'update':
@@ -673,6 +687,11 @@ class MyApp(App):
 
 
             # {'op' : 'game', 'data' : 'result', 'result' : '', 'player' : ''} -> tie, winner
+            elif data['op'] == 'game' and data['data'] == 'result':
+                if data['result'] == "winner":
+                    print(data['player'])
+                else:
+                    print("tie")
 
             client.remove_last_queue_Server_data()
         except Exception as e:
