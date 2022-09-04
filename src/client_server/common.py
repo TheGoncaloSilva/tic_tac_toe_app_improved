@@ -4,10 +4,16 @@ from Crypto.Cipher import AES
     # Encrypt the values given
 def encrypt_values(data, key):
     # stress na encriptação de dicionários. Adaptar isso
+    print(key)
     if key != '': 
-        cipher = AES.new (key, AES.MODE_ECB) # Define the encryption algorithm
-        result = cipher.encrypt(str(data)*16) # Fix padding
-        return str (base64.b64encode (result), 'utf-8') # enconde into a format to be sent
+        try:
+            cipher = AES.new (key, AES.MODE_ECB) # Define the encryption algorithm
+            result = cipher.encrypt(str(data)*16) # Fix padding
+            return str (base64.b64encode (result), 'utf-8') # enconde into a format to be sent
+        except Exception as e:
+            print(f'No data to encrypt: {e}')
+            print(f'Data: {data}')
+            return None
     return data # If the connection isn't encrypted, just return the data
 
 def decrypt_values(data, key):

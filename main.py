@@ -432,6 +432,12 @@ class MyApp(App):
     def order_funct(self, e):
         return e[1]
 
+    def chat_history(self):
+        pass
+
+    def send_chat(self):
+        pass
+
 
     ################### Server ###################
 
