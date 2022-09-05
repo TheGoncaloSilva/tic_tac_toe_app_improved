@@ -220,12 +220,12 @@ def connect_server(ip, port, enc, password):
     # dictionary containing the room information
     server_attributes = {'ip': ip, 'port': port, 'enc': enc, 'password': password}
 
-    connection_establisher = threading.Thread(target=pair_wServer,args=(client_sock,),daemon=True) # establish connection  to the client
+    """connection_establisher = threading.Thread(target=pair_wServer,args=(client_sock,),daemon=True) # establish connection  to the client
     threads.append(connection_establisher)
     connection_establisher.start()
 
     if not connection_establisher.is_alive():
-        threads.pop()
+        threads.pop()"""
         
     Receive_Handler = threading.Thread(target=receiveServerGameData,args=(client_sock,),daemon=True) # handle incoming data
     threads.append(Receive_Handler)

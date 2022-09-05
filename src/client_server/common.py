@@ -8,10 +8,14 @@ def encrypt_values(data, key):
     if key != '': 
         try:
             cipher = AES.new (key, AES.MODE_ECB) # Define the encryption algorithm
-            result = cipher.encrypt(str(data)*16) # Fix padding
-            return str (base64.b64encode (result), 'utf-8') # enconde into a format to be sent
+            result = base64.b64decode (data)
+            result = cipher.decrypt(result)
+            result = result[0:round((len(result)/16))] # Fix the exta padding
+            #result = base64.b64decode (data)
+            #result = cipher.decrypt (result)
+            return result.decode('utf-8') # Decrypted result
         except Exception as e:
-            print(f'No data to encrypt: {e}')
+            print(f'No data to decypt: {e}')
             print(f'Data: {data}')
             return None
     return data # If the connection isn't encrypted, just return the data

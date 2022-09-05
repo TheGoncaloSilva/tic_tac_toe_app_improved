@@ -77,8 +77,9 @@ def handle_client_connection(client_socket,address):
         client_socket.close()
         return False
     
-    send_msg = byting_dict({'op': encrypt_values('status', server_attributes['enc']), 'status': encrypt_values("logged_in", server_attributes['enc'])})
-    client_socket.send(send_msg)
+    #queue_server_data({'op' : 'status', 'status' : 'logged_in'})
+    #send_msg = byting_dict({'op': encrypt_values('status', server_attributes['enc']), 'status': encrypt_values("logged_in", server_attributes['enc'])})
+    #client_socket.send(send_msg)
 
     # GET CLIENTS NAME
     player_name = "outside"
